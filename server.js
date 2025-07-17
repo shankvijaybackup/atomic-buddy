@@ -29,7 +29,16 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
-app.use(express.static('public'));
+// Serve static files like app.js from the root directory
+app.use(express.static(path.join(__dirname)));
+
+// For any other non-API request, send the index.html file
+// This is crucial for single-page applications like React
+app.get('*', (req, res) => {
+  if (!req.originalUrl.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, 'index.html'));
+  }
+});
 
 // Helper function to extract JSON from AI responses
 // Helper function to extract JSON from AI responses
