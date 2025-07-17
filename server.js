@@ -30,13 +30,18 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 // Serve static files like app.js from the root directory
-app.use(express.static(path.join(__dirname)));
+// Serve static files from the 'public' directory
+app.use(express.static('public'));
 
-// For any other non-API request, send the index.html file
-// This is crucial for single-page applications like React
+// For any non-API request, send the index.html file from the 'public' directory
+// This is the correct setup for a Single Page Application with your file structure
 app.get('*', (req, res) => {
+  // Check if the request is not for an API endpoint
   if (!req.originalUrl.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    // If it's an API route that wasn't found, send a proper 404
+    res.status(404).json({ error: 'API route not found' });
   }
 });
 
