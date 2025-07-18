@@ -49,20 +49,23 @@ app.get('*', (req, res) => {
 // Helper function to extract JSON from AI responses
 const extractJSON = (response) => {
   try {
-    // First try to find JSON in code blocks
-    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+    // Remove all markdown formatting first
+    let cleanResponse = response
+      .replace(/```json\s*/g, '')
+      .replace(/```\s*/g, '')
+      .replace(/\*\*/g, '')  // Remove bold markdown
+      .replace(/\*/g, '')    // Remove italic markdown
+      .replace(/#{1,6}\s*/g, '') // Remove headers
+      .trim();
+
+    // Find the JSON object
+    const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return cleanJSON(jsonMatch[1].trim());
+      return cleanJSON(jsonMatch[0]);
     }
     
-    // Then try to find JSON object directly
-    const directJsonMatch = response.match(/\{[\s\S]*\}/);
-    if (directJsonMatch) {
-      return cleanJSON(directJsonMatch[0].trim());
-    }
-    
-    // Clean and return the response as-is
-    return cleanJSON(response.trim());
+    // If no JSON found, try the original response
+    return cleanJSON(cleanResponse);
   } catch (error) {
     console.error('JSON extraction error:', error);
     return response.trim();
@@ -191,19 +194,30 @@ app.post('/api/analyze', async (req, res) => {
                          userProfile.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)/);
     const userName = userNameMatch ? userNameMatch[1].trim() : "Your Name";
 
-    // Step 1: Analyze target profile
+    // Step 1: Analyze target profile with DEEP content analysis
     const personaPrompt = `
-      Analyze this LinkedIn profile and extract information. Return valid JSON only:
+      Analyze this complete LinkedIn profile including recent posts and activities:
       
-      Profile: "${targetProfile.replace(/"/g, '\\"')}"
+      Profile: "${targetProfile}"
       
+      Extract SPECIFIC details from their recent posts, comments, and activities. Look for:
+      - Recent post topics and themes
+      - Specific quotes or messages they've shared
+      - Events they've participated in
+      - Causes they care about
+      - Their personal mission/passion
+      
+      Return ONLY valid JSON without markdown formatting:
       {
         "persona": {
           "name": "first name only",
           "jobTitle": "exact job title",
           "level": "entry/mid/senior/executive/c-suite",
-          "industry": "specific industry", 
+          "industry": "specific industry",
           "company": "company name",
+          "recentActivity": ["specific recent posts/activities from profile"],
+          "personalQuotes": ["any quotes or key messages they've shared"],
+          "passions": ["what they're passionate about based on posts"],
           "painPoints": ["role-specific pain points"],
           "decisionMaking": "decision style"
         },
@@ -233,34 +247,31 @@ app.post('/api/analyze', async (req, res) => {
     console.log('Persona analysis completed');
 
     // Step 2: Generate outreach with strict guidelines
-    // Step 2: Generate outreach with Atomicwork focus
+  // Update the basePrompt to include specific recent activity
     const basePrompt = `
-      TARGET: Name: ${personaData.persona.name}, Title: ${personaData.persona.jobTitle}, Company: ${personaData.persona.company}, Industry: ${personaData.persona.industry}
+      TARGET PROFILE: 
+      - Name: ${personaData.persona.name}
+      - Title: ${personaData.persona.jobTitle} 
+      - Company: ${personaData.persona.company}
+      - Industry: ${personaData.persona.industry}
+      - Recent Activity: ${personaData.persona.recentActivity?.join(', ') || 'Not available'}
+      - Personal Quotes: ${personaData.persona.personalQuotes?.join(', ') || 'Not available'}
+      - Passions: ${personaData.persona.passions?.join(', ') || 'Not available'}
+      
       YOUR NAME: ${userName}
-      YOUR BACKGROUND: Ex-Freshworks founder, ITIL expert, now building Atomicwork
+      YOUR BACKGROUND: Ex-Freshworks founder, ITIL expert, now building Atomicwork's agentic service management platform
       
-      ATOMICWORK CONTEXT:
-      - Atomicwork is an agentic service management platform
-      - Revolutionary AI-powered ITSM solution 
-      - Transforms how enterprises handle service delivery
-      - Built by ex-Freshworks founder with deep ITSM expertise
-      - Specifically designed for modern enterprise needs
+      CRITICAL RULES:
+      1. START by acknowledging their recent posts/activities specifically
+      2. Reference their actual quotes, events, or initiatives they mentioned
+      3. Connect their passions to your Atomicwork journey authentically
+      4. Show genuine appreciation for their work before any business context
+      5. Make it feel like you actually READ their profile and posts
+      6. Be authentic about shared values (mentorship, transformation, etc.)
+      7. NEVER generic pitches - everything must be specific to their recent content
+      8. Use real name ${userName} not placeholders
       
-      KNOWLEDGE BASE: ${knowledgeBase ? knowledgeBase.length : 0} Atomicwork documents available
-      
-      STRICT RULES:
-      1. Focus on Atomicwork's agentic service management capabilities
-      2. Reference your Freshworks founder credibility to establish authority
-      3. Connect their ${personaData.persona.industry} challenges to Atomicwork's solutions
-      4. Share insights about modern ITSM transformation
-      5. NEVER mention fake companies or made-up case studies
-      6. Keep LinkedIn messages under 250 characters
-      7. Keep emails under 100 words
-      8. Never add signatures - content only
-      9. Use real name ${userName} not placeholders
-      10. Position Atomicwork as the next evolution in service management
-      
-      Focus on how Atomicwork's agentic approach solves specific ${personaData.persona.industry} service management challenges.
+      Focus on human connection first, Atomicwork's relevance second.
     `;
 
     let openaiData, claudeData, geminiData;
@@ -269,10 +280,10 @@ app.post('/api/analyze', async (req, res) => {
     // OpenAI - Direct & Technical
     try {
       const openaiPrompt = `${basePrompt}
-        Create DIRECT, TECHNICAL outreach about Atomicwork's agentic service management platform.
-        Connect your Freshworks founder experience to building Atomicwork for ${personaData.persona.industry} challenges.
+        Create DIRECT, TECHNICAL outreach that acknowledges their specific recent activities.
+        Reference their actual posts, quotes, or initiatives before connecting to Atomicwork.
         
-        {"linkedin":{"subject":"technical subject under 45 chars","message":"direct message under 250 chars about Atomicwork's technical capabilities"},"email":{"subject":"technical email subject","message":"concise email under 100 words about Atomicwork's agentic ITSM approach"}}
+        {"linkedin":{"subject":"technical subject under 50 chars referencing their work","message":"message under 250 chars acknowledging their specific recent posts then connecting to Atomicwork's technical capabilities"},"email":{"subject":"technical email subject referencing their activity","message":"email under 100 words acknowledging their specific work then discussing Atomicwork's agentic ITSM relevance"}}
       `;
 
       const openaiResponse = await openai.chat.completions.create({
@@ -294,10 +305,10 @@ app.post('/api/analyze', async (req, res) => {
     // Claude - Formal & Enterprise
     try {
       const claudePrompt = `${basePrompt}
-        Create FORMAL, ENTERPRISE outreach about Atomicwork's strategic value for ${personaData.persona.industry}.
-        Position Atomicwork as the next-gen service management solution built by ex-Freshworks founder.
+        Create DIRECT, TECHNICAL outreach that acknowledges their specific recent activities.
+        Reference their actual posts, quotes, or initiatives before connecting to Atomicwork.
         
-        {"linkedin":{"subject":"strategic subject under 45 chars","message":"formal message under 250 chars about Atomicwork's enterprise value"},"email":{"subject":"strategic email subject","message":"concise email under 100 words about Atomicwork's strategic advantages"}}
+        {"linkedin":{"subject":"technical subject under 50 chars referencing their work","message":"message under 250 chars acknowledging their specific recent posts then connecting to Atomicwork's technical capabilities"},"email":{"subject":"technical email subject referencing their activity","message":"email under 100 words acknowledging their specific work then discussing Atomicwork's agentic ITSM relevance"}}
       `;
 
       const claudeMessage = await anthropic.messages.create({
@@ -317,23 +328,32 @@ app.post('/api/analyze', async (req, res) => {
     }
 
     // Gemini - Personalized & Relationship
+    // Gemini - Personalized & Relationship
     try {
       const geminiPrompt = `${basePrompt}
-        Create PERSONALIZED outreach about Atomicwork's relevance to ${personaData.persona.name}'s ${personaData.persona.industry} challenges.
-        Connect your Freshworks founder journey to building Atomicwork for their specific needs.
+        Create PERSONALIZED outreach acknowledging their specific recent activities and posts.
+        Reference their actual content before connecting to Atomicwork's relevance.
         
-        {"linkedin":{"subject":"personal subject under 45 chars","message":"personalized message under 250 chars about Atomicwork's relevance"},"email":{"subject":"personal email subject","message":"concise email under 100 words about Atomicwork's industry-specific value"}}
+        IMPORTANT: Return ONLY raw JSON without any markdown, asterisks, or formatting.
+        
+        {"linkedin":{"subject":"personal subject under 50 chars referencing their posts","message":"message under 250 chars acknowledging specific recent activities then connecting to Atomicwork"},"email":{"subject":"personal email subject referencing their work","message":"email under 100 words acknowledging specific posts then discussing Atomicwork's industry relevance"}}
+        
+        No markdown formatting. No asterisks. No code blocks. Just pure JSON.
       `;
 
       const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const geminiResponse = await geminiModel.generateContent(geminiPrompt);
+      
+      console.log('Raw Gemini response:', geminiResponse.response.text()); // Debug log
+      
       geminiData = JSON.parse(extractJSON(geminiResponse.response.text()));
       console.log('Gemini analysis completed');
     } catch (error) {
       console.error('Gemini error:', error);
+      console.log('Gemini raw response that failed:', geminiResponse?.response?.text?.());
       geminiData = {
-        linkedin: { subject: "Atomicwork Industry Connect", message: "Error generating content" },
-        email: { subject: "Atomicwork Industry Connect", message: "Error generating content" }
+        linkedin: { subject: "Industry Connect", message: "Error generating Gemini content" },
+        email: { subject: "Industry Connect", message: "Error generating Gemini content" }
       };
     }
 
