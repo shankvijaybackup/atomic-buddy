@@ -122,40 +122,26 @@ app.use((error, req, res, next) => {
 // API Routes
 
 // Upload files
-app.post('/api/upload', (req, res) => {
-  upload.array('files')(req, res, (err) => {
-    if (err) {
-      console.error('Upload error:', err);
-      if (err instanceof multer.MulterError) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).json({ error: 'File too large. Maximum size is 500MB per file.' });
-        }
-        if (err.code === 'LIMIT_FILE_COUNT') {
-          return res.status(400).json({ error: 'Too many files. Maximum 50 files at once.' });
-        }
-      }
-      return res.status(500).json({ error: 'Upload failed' });
+// Refactored Upload files route
+app.post('/api/upload', upload.array('files'), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
     }
 
-    try {
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ error: 'No files uploaded' });
-      }
+    const files = req.files.map(file => ({
+      name: file.originalname,
+      path: file.path,
+      size: file.size,
+      type: file.mimetype,
+      uploaded: new Date().toISOString()
+    }));
 
-      const files = req.files.map(file => ({
-        name: file.originalname,
-        path: file.path,
-        size: file.size,
-        type: file.mimetype,
-        uploaded: new Date().toISOString()
-      }));
-
-      res.json({ files });
-    } catch (error) {
-      console.error('Processing error:', error);
-      res.status(500).json({ error: 'Failed to process files' });
-    }
-  });
+    res.json({ files });
+  } catch (error) {
+    console.error('Processing error:', error);
+    res.status(500).json({ error: 'Failed to process files' });
+  }
 });
 
 // Get uploaded files
