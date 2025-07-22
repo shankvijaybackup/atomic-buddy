@@ -189,18 +189,20 @@ app.post('/api/analyze', async (req, res) => {
     const userName = "{{Your Name}}";
     console.log('Using placeholder name:', userName);
 
-    // Step 1: Analyze target profile with DEEP content analysis
+// Step 1: Analyze target profile with DEEP content analysis
     const personaPrompt = `
-      Analyze this complete LinkedIn profile including recent posts and activities:
+      Analyze this complete LinkedIn profile including recent posts, activities, and company information:
       
       Profile: "${targetProfile.replace(/"/g, '\\"')}"
       
-      Extract SPECIFIC details from their recent posts, comments, and activities. Look for:
+      Extract SPECIFIC details including:
       - Recent post topics and themes
       - Specific quotes or messages they've shared
       - Events they've participated in
       - Causes they care about
-      - Their personal mission/passion
+      - Company information (size, industry, recent news, achievements)
+      - Company performance data or stats mentioned
+      - Any Account IQ or business metrics referenced
       
       Return ONLY valid JSON without markdown formatting:
       {
@@ -215,6 +217,14 @@ app.post('/api/analyze', async (req, res) => {
           "passions": ["what they're passionate about based on posts"],
           "painPoints": ["role-specific pain points"],
           "decisionMaking": "decision style"
+        },
+        "companyData": {
+          "name": "company name",
+          "industry": "industry sector",
+          "size": "company size if mentioned",
+          "recentNews": ["any company achievements, news, or updates mentioned"],
+          "businessMetrics": ["any performance data, growth stats, or Account IQ mentioned"],
+          "challenges": ["company-specific challenges or transformation initiatives"]
         },
         "discProfile": {
           "primary": "D/I/S/C with brief description",
@@ -241,7 +251,7 @@ app.post('/api/analyze', async (req, res) => {
 
     console.log('Persona analysis completed');
 
-    // Step 2: Generate outreach with Atomicwork focus
+// Step 2: Generate outreach with company-specific insights
     const basePrompt = `
       TARGET PROFILE: 
       - Name: ${personaData.persona.name}
@@ -252,20 +262,27 @@ app.post('/api/analyze', async (req, res) => {
       - Personal Quotes: ${personaData.persona.personalQuotes?.join(', ') || 'Not available'}
       - Passions: ${personaData.persona.passions?.join(', ') || 'Not available'}
       
-      YOUR NAME: ${userName}
+      COMPANY INSIGHTS:
+      - Company: ${personaData.companyData?.name || 'Not available'}
+      - Industry: ${personaData.companyData?.industry || 'Not available'}
+      - Recent Company News: ${personaData.companyData?.recentNews?.join(', ') || 'Not available'}
+      - Business Metrics: ${personaData.companyData?.businessMetrics?.join(', ') || 'Not available'}
+      - Company Challenges: ${personaData.companyData?.challenges?.join(', ') || 'Not available'}
+      
+      YOUR NAME: {{Your Name}}
       YOUR BACKGROUND: Ex-Freshworks founder, ITIL expert, now building Atomicwork's agentic service management platform
       
       CRITICAL RULES:
       1. START by acknowledging their recent posts/activities specifically
-      2. Reference their actual quotes, events, or initiatives they mentioned
-      3. Connect their passions to your Atomicwork journey authentically
-      4. Show genuine appreciation for their work before any business context
-      5. Make it feel like you actually read their profile and posts
-      6. Be authentic about shared values (mentorship, transformation, etc.)
-      7. NEVER generic pitches - everything must be specific to their recent content
-      8. Use real name ${userName} not placeholders
+      2. Reference specific company data, metrics, or recent news if available
+      3. Connect their company's challenges to Atomicwork's capabilities
+      4. Show genuine knowledge about their company's situation
+      5. Use proper formatting - NO em-dashes, NO special characters
+      6. Be specific about industry trends relevant to their company
+      7. Reference actual business metrics or performance data if mentioned
+      8. Make it feel like you've researched their company thoroughly
       
-      Focus on human connection first, Atomicwork's relevance second.
+      Focus on demonstrating knowledge of their business context, not generic pitches.
     `;
 
     let openaiData, claudeData, geminiData;
@@ -347,10 +364,11 @@ app.post('/api/analyze', async (req, res) => {
       };
     }
 
-    // Return combined results
+// Return combined results
     const result = {
       persona: personaData.persona,
       discProfile: personaData.discProfile,
+      companyData: personaData.companyData,
       userName: userName,
       outreach: {
         direct: openaiData,
