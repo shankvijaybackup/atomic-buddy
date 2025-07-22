@@ -47,27 +47,32 @@ app.get('*', (req, res) => {
 
 // Helper function to extract JSON from AI responses
 // Helper function to extract JSON from AI responses
+// Helper function to extract JSON from AI responses
 const extractJSON = (response) => {
   try {
-    // Remove all markdown formatting first
+    // Remove all markdown formatting
     let cleanResponse = response
       .replace(/```json\s*/g, '')
       .replace(/```\s*/g, '')
-      .replace(/\*\*/g, '')  // Remove bold markdown
-      .replace(/\*/g, '')    // Remove italic markdown
-      .replace(/#{1,6}\s*/g, '') // Remove headers
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/#{1,6}\s*/g, '')
+      .replace(/^I apologize[\s\S]*?(?=\{)/, '') // Remove Claude's apology text
       .trim();
 
-    // Find the JSON object
-    const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return cleanJSON(jsonMatch[0]);
+    // Find JSON object
+    const jsonStart = cleanResponse.indexOf('{');
+    const jsonEnd = cleanResponse.lastIndexOf('}') + 1;
+    
+    if (jsonStart !== -1 && jsonEnd > jsonStart) {
+      const jsonStr = cleanResponse.substring(jsonStart, jsonEnd);
+      return cleanJSON(jsonStr);
     }
     
-    // If no JSON found, try the original response
     return cleanJSON(cleanResponse);
   } catch (error) {
     console.error('JSON extraction error:', error);
+    console.log('Problematic response:', response.substring(0, 200));
     return response.trim();
   }
 };
@@ -192,7 +197,10 @@ app.post('/api/analyze', async (req, res) => {
     // Extract user name from profile
     const userNameMatch = userProfile.match(/Name[:\s]+([^\n]+)/i) || 
                          userProfile.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)/);
-    const userName = userNameMatch ? userNameMatch[1].trim() : "Your Name";
+    // Use placeholder for user name
+    const userName = "{{Your Name}}";
+    
+    console.log('Using placeholder name:', userName);
 
     // Step 1: Analyze target profile with DEEP content analysis
     const personaPrompt = `
@@ -277,68 +285,33 @@ app.post('/api/analyze', async (req, res) => {
     let openaiData, claudeData, geminiData;
 
     // OpenAI - Direct & Technical
-    // OpenAI - Direct & Technical
     try {
       const openaiPrompt = `${basePrompt}
-        Create DIRECT, TECHNICAL outreach that acknowledges their specific recent activities.
-        Reference their actual posts, quotes, or initiatives before connecting to Atomicwork.
+        Create DIRECT, TECHNICAL outreach acknowledging their specific recent activities.
         
-        {"linkedin":{"subject":"technical subject under 50 chars referencing their work","message":"message under 250 chars acknowledging their specific recent posts then connecting to Atomicwork's technical capabilities"},"email":{"subject":"technical email subject referencing their activity","message":"email under 100 words acknowledging their specific work then discussing Atomicwork's agentic ITSM relevance"}}
+        CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks.
+        
+        {"linkedin":{"subject":"technical subject under 50 chars","message":"message under 250 chars"},"email":{"subject":"technical email subject","message":"email under 100 words"}}
       `;
 
-      const openaiResponse = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [{ role: "user", content: openaiPrompt }],
-        max_tokens: 600
-      });
-
-      openaiData = JSON.parse(extractJSON(openaiResponse.choices[0].message.content));
-      console.log('OpenAI analysis completed');
-    } catch (error) {
-      console.error('OpenAI error:', error);
-      openaiData = {
-        linkedin: { subject: "Atomicwork Technical Insights", message: "Error generating content" },
-        email: { subject: "Atomicwork Technical Insights", message: "Error generating content" }
-      };
-    }
-
-    // Claude - Formal & Enterprise
+    // Claude - Formal & Enterprise  
     try {
       const claudePrompt = `${basePrompt}
-        Create DIRECT, TECHNICAL outreach that acknowledges their specific recent activities.
-        Reference their actual posts, quotes, or initiatives before connecting to Atomicwork.
+        Create FORMAL, ENTERPRISE outreach acknowledging their specific recent activities.
         
-        {"linkedin":{"subject":"technical subject under 50 chars referencing their work","message":"message under 250 chars acknowledging their specific recent posts then connecting to Atomicwork's technical capabilities"},"email":{"subject":"technical email subject referencing their activity","message":"email under 100 words acknowledging their specific work then discussing Atomicwork's agentic ITSM relevance"}}
+        CRITICAL: Return ONLY valid JSON. No explanations, no apologies, no markdown.
+        
+        {"linkedin":{"subject":"formal subject under 50 chars","message":"message under 250 chars"},"email":{"subject":"formal email subject","message":"email under 100 words"}}
       `;
 
-      const claudeMessage = await anthropic.messages.create({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 600,
-        messages: [{ role: "user", content: claudePrompt }]
-      });
-
-      claudeData = JSON.parse(extractJSON(claudeMessage.content[0].text));
-      console.log('Claude analysis completed');
-    } catch (error) {
-      console.error('Claude error:', error);
-      claudeData = {
-        linkedin: { subject: "Atomicwork Enterprise Strategy", message: "Error generating content" },
-        email: { subject: "Atomicwork Enterprise Strategy", message: "Error generating content" }
-      };
-    }
-
-    // Gemini - Personalized & Relationship
     // Gemini - Personalized & Relationship
     try {
       const geminiPrompt = `${basePrompt}
-        Create PERSONALIZED outreach acknowledging their specific recent activities and posts.
-        Reference their actual content before connecting to Atomicwork's relevance.
+        Create PERSONALIZED outreach acknowledging their specific recent activities.
         
-        IMPORTANT: Return ONLY raw JSON without any markdown, asterisks, or formatting.
+        CRITICAL: Return ONLY valid JSON. No markdown code blocks, no explanations.
         
-        {"linkedin":{"subject":"personal subject under 50 chars referencing their posts","message":"message under 250 chars acknowledging specific recent activities then connecting to Atomicwork"},"email":{"subject":"personal email subject referencing their work","message":"email under 100 words acknowledging specific posts then discussing Atomicwork's industry relevance"}}
-        
-        No markdown formatting. No asterisks. No code blocks. Just pure JSON.
+        {"linkedin":{"subject":"personal subject under 50 chars","message":"message under 250 chars"},"email":{"subject":"personal email subject","message":"email under 100 words"}}
       `;
 
       const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
