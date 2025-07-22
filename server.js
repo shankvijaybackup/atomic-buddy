@@ -29,24 +29,8 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
-// Serve static files like app.js from the root directory
-// Serve static files from the 'public' directory
 app.use(express.static('public'));
 
-// For any non-API request, send the index.html file from the 'public' directory
-// This is the correct setup for a Single Page Application with your file structure
-app.get('*', (req, res) => {
-  // Check if the request is not for an API endpoint
-  if (!req.originalUrl.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  } else {
-    // If it's an API route that wasn't found, send a proper 404
-    res.status(404).json({ error: 'API route not found' });
-  }
-});
-
-// Helper function to extract JSON from AI responses
-// Helper function to extract JSON from AI responses
 // Helper function to extract JSON from AI responses
 const extractJSON = (response) => {
   try {
@@ -79,17 +63,14 @@ const extractJSON = (response) => {
 
 // Helper function to clean JSON strings
 const cleanJSON = (jsonString) => {
-  // Remove control characters and fix common issues
   return jsonString
     .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
     .replace(/\n/g, '\\n') // Escape newlines
     .replace(/\r/g, '\\r') // Escape carriage returns
     .replace(/\t/g, '\\t') // Escape tabs
-    .replace(/\\/g, '\\\\') // Escape backslashes
-    .replace(/"/g, '\\"') // Escape quotes
-    .replace(/\\"/g, '"') // Fix double escaping
-    .replace(/\\\\/g, '\\'); // Fix double backslashes
+    .trim();
 };
+
 // Configure file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -114,6 +95,7 @@ const upload = multer({
     cb(null, true);
   }
 });
+
 // Error handling middleware for multer
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
@@ -126,30 +108,44 @@ app.use((error, req, res, next) => {
   }
   next(error);
 });
-// Start server
+
 // API Routes
 
 // Upload files
-// Refactored Upload files route
-app.post('/api/upload', upload.array('files'), (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No files uploaded' });
+app.post('/api/upload', (req, res) => {
+  upload.array('files')(req, res, (err) => {
+    if (err) {
+      console.error('Upload error:', err);
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File too large. Maximum size is 500MB per file.' });
+        }
+        if (err.code === 'LIMIT_FILE_COUNT') {
+          return res.status(400).json({ error: 'Too many files. Maximum 50 files at once.' });
+        }
+      }
+      return res.status(500).json({ error: 'Upload failed' });
     }
 
-    const files = req.files.map(file => ({
-      name: file.originalname,
-      path: file.path,
-      size: file.size,
-      type: file.mimetype,
-      uploaded: new Date().toISOString()
-    }));
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'No files uploaded' });
+      }
 
-    res.json({ files });
-  } catch (error) {
-    console.error('Processing error:', error);
-    res.status(500).json({ error: 'Failed to process files' });
-  }
+      const files = req.files.map(file => ({
+        name: file.originalname,
+        path: file.path,
+        size: file.size,
+        type: file.mimetype,
+        uploaded: new Date().toISOString()
+      }));
+
+      res.json({ files });
+    } catch (error) {
+      console.error('Processing error:', error);
+      res.status(500).json({ error: 'Failed to process files' });
+    }
+  });
 });
 
 // Get uploaded files
@@ -178,11 +174,6 @@ app.get('/api/files', (req, res) => {
   }
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
 // Analyze profile and generate outreach
 app.post('/api/analyze', async (req, res) => {
   try {
@@ -194,19 +185,15 @@ app.post('/api/analyze', async (req, res) => {
 
     console.log('Starting analysis...');
 
-    // Extract user name from profile
-    const userNameMatch = userProfile.match(/Name[:\s]+([^\n]+)/i) || 
-                         userProfile.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)/);
     // Use placeholder for user name
     const userName = "{{Your Name}}";
-    
     console.log('Using placeholder name:', userName);
 
     // Step 1: Analyze target profile with DEEP content analysis
     const personaPrompt = `
       Analyze this complete LinkedIn profile including recent posts and activities:
       
-      Profile: "${targetProfile}"
+      Profile: "${targetProfile.replace(/"/g, '\\"')}"
       
       Extract SPECIFIC details from their recent posts, comments, and activities. Look for:
       - Recent post topics and themes
@@ -254,8 +241,7 @@ app.post('/api/analyze', async (req, res) => {
 
     console.log('Persona analysis completed');
 
-    // Step 2: Generate outreach with strict guidelines
-  // Update the basePrompt to include specific recent activity
+    // Step 2: Generate outreach with Atomicwork focus
     const basePrompt = `
       TARGET PROFILE: 
       - Name: ${personaData.persona.name}
@@ -274,7 +260,7 @@ app.post('/api/analyze', async (req, res) => {
       2. Reference their actual quotes, events, or initiatives they mentioned
       3. Connect their passions to your Atomicwork journey authentically
       4. Show genuine appreciation for their work before any business context
-      5. Make it feel like you actually READ their profile and posts
+      5. Make it feel like you actually read their profile and posts
       6. Be authentic about shared values (mentorship, transformation, etc.)
       7. NEVER generic pitches - everything must be specific to their recent content
       8. Use real name ${userName} not placeholders
@@ -294,7 +280,23 @@ app.post('/api/analyze', async (req, res) => {
         {"linkedin":{"subject":"technical subject under 50 chars","message":"message under 250 chars"},"email":{"subject":"technical email subject","message":"email under 100 words"}}
       `;
 
-    // Claude - Formal & Enterprise  
+      const openaiResponse = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [{ role: "user", content: openaiPrompt }],
+        max_tokens: 800
+      });
+
+      openaiData = JSON.parse(extractJSON(openaiResponse.choices[0].message.content));
+      console.log('OpenAI analysis completed');
+    } catch (error) {
+      console.error('OpenAI error:', error);
+      openaiData = {
+        linkedin: { subject: "Atomicwork Technical Insights", message: "Error generating content" },
+        email: { subject: "Atomicwork Technical Insights", message: "Error generating content" }
+      };
+    }
+
+    // Claude - Formal & Enterprise
     try {
       const claudePrompt = `${basePrompt}
         Create FORMAL, ENTERPRISE outreach acknowledging their specific recent activities.
@@ -303,6 +305,22 @@ app.post('/api/analyze', async (req, res) => {
         
         {"linkedin":{"subject":"formal subject under 50 chars","message":"message under 250 chars"},"email":{"subject":"formal email subject","message":"email under 100 words"}}
       `;
+
+      const claudeMessage = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 800,
+        messages: [{ role: "user", content: claudePrompt }]
+      });
+
+      claudeData = JSON.parse(extractJSON(claudeMessage.content[0].text));
+      console.log('Claude analysis completed');
+    } catch (error) {
+      console.error('Claude error:', error);
+      claudeData = {
+        linkedin: { subject: "Atomicwork Enterprise Strategy", message: "Error generating content" },
+        email: { subject: "Atomicwork Enterprise Strategy", message: "Error generating content" }
+      };
+    }
 
     // Gemini - Personalized & Relationship
     try {
@@ -317,16 +335,15 @@ app.post('/api/analyze', async (req, res) => {
       const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const geminiResponse = await geminiModel.generateContent(geminiPrompt);
       
-      console.log('Raw Gemini response:', geminiResponse.response.text()); // Debug log
+      console.log('Raw Gemini response:', geminiResponse.response.text());
       
       geminiData = JSON.parse(extractJSON(geminiResponse.response.text()));
       console.log('Gemini analysis completed');
     } catch (error) {
       console.error('Gemini error:', error);
-      console.log('Gemini raw response that failed:', geminiResponse?.response?.text?.());
       geminiData = {
-        linkedin: { subject: "Industry Connect", message: "Error generating Gemini content" },
-        email: { subject: "Industry Connect", message: "Error generating Gemini content" }
+        linkedin: { subject: "Industry Connect", message: "Error generating content" },
+        email: { subject: "Industry Connect", message: "Error generating content" }
       };
     }
 
@@ -349,6 +366,12 @@ app.post('/api/analyze', async (req, res) => {
     res.status(500).json({ error: 'Failed to analyze profile and generate outreach' });
   }
 });
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 app.listen(PORT, () => {
   console.log(`Atomicwork Outreach App running on port ${PORT}`);
   console.log(`Access the app at: http://localhost:${PORT}`);
