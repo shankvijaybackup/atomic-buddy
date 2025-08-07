@@ -21,8 +21,6 @@ const AtomicworkOutreachApp = () => {
         setError(null);
         
         try {
-            console.log('Starting analysis...');
-            
             const response = await fetch('/api/analyze', {
                 method: 'POST',
                 headers: {
@@ -31,7 +29,7 @@ const AtomicworkOutreachApp = () => {
                 body: JSON.stringify({
                     userProfile,
                     targetProfile: leadProfile,
-                    knowledgeBase: companyProfile  // optional
+                    knowledgeBase: companyProfile
                   })
             });
 
@@ -42,7 +40,6 @@ const AtomicworkOutreachApp = () => {
 
             const result = await response.json();
             
-            // Basic validation on the frontend to ensure the core structure is there
             if (!result || !result.outreach) {
                 throw new Error("Received an incomplete analysis from the server.");
             }
@@ -211,36 +208,29 @@ const AtomicworkOutreachApp = () => {
                         {analysis ? (
                             <>
                                 {/* Personality Analysis */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* User Persona */}
-                                    <div className="bg-white rounded-xl shadow-md p-6">
-                                        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-700">Your Personality Assessment</h2>
-                                        <div className="space-y-3 text-sm">
-                                            <p><span className="font-semibold">DISC:</span> {analysis.userPersona?.discProfile?.primary || 'N/A'}</p>
-                                            <p><span className="font-semibold">Communication:</span> {analysis.userPersona?.discProfile?.communication || 'N/A'}</p>
-                                            {renderPersonalityScores(analysis.userPersona?.oceanProfile)}
-                                        </div>
-                                    </div>
-                                    {/* Lead Persona */}
-                                    <div className="bg-white rounded-xl shadow-md p-6">
-                                        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-700">Lead's Personality Assessment</h2>
-                                        <div className="space-y-3 text-sm">
-                                            <p><span className="font-semibold">DISC:</span> {analysis.leadPersona?.discProfile?.primary || 'N/A'}</p>
-                                            <p><span className="font-semibold">Communication:</span> {analysis.leadPersona?.discProfile?.communication || 'N/A'}</p>
-                                            {renderPersonalityScores(analysis.leadPersona?.oceanProfile)}
-                                        </div>
+                                <div className="bg-white rounded-xl shadow-md p-6">
+                                    {/* ================================================================= */}
+                                    {/* THE FIX: The "Your Persona" card is removed, and the grid is gone. */}
+                                    {/* The OCEAN scores are added to the Lead's card.                */}
+                                    {/* ================================================================= */}
+                                    <h2 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-700">Lead's Personality Assessment</h2>
+                                    <div className="space-y-3 text-sm">
+                                        <p><span className="font-semibold">DISC:</span> {analysis.leadPersona?.discProfile?.primary || 'N/A'}</p>
+                                        <p><span className="font-semibold">Communication:</span> {analysis.leadPersona?.discProfile?.communication || 'N/A'}</p>
+                                        {/* This now correctly renders the OCEAN scores for the lead */}
+                                        {renderPersonalityScores(analysis.leadPersona?.oceanProfile)}
                                     </div>
                                 </div>
 
                                 {/* Outreach Content */}
                                 <div className="space-y-6">
                                     {[
-                                        { key: 'peerToPeerInquiry', title: 'Option 1: Peer-to-Peer Inquiry'},
-                                        { key: 'insightAndQuestion', title: 'Option 2: Insight & Question'},
-                                        { key: 'complimentAndCuriosity', title: 'Option 3: Compliment & Curiosity'}
+                                        { key: 'direct', title: 'Option 1: Direct & Technical'},
+                                        { key: 'formal', title: 'Option 2: Formal & Enterprise'},
+                                        { key: 'personalized', title: 'Option 3: Personalized & Relational'}
                                     ].map((option) => {
                                         const outreachOption = analysis.outreach?.[option.key];
-                                        if (!outreachOption) return null; // Don't render if the option is missing
+                                        if (!outreachOption) return null;
 
                                         return (
                                         <div key={option.key} className="bg-white rounded-xl shadow-md p-6">
