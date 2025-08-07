@@ -30,10 +30,9 @@ const AtomicworkOutreachApp = () => {
                 },
                 body: JSON.stringify({
                     userProfile,
-                    companyProfile,
-                    leadProfile,
-                    notebookId
-                })
+                    targetProfile: leadProfile,
+                    knowledgeBase: companyProfile  // optional
+                  })
             });
 
             if (!response.ok) {
