@@ -1,8 +1,11 @@
+# macOS system files
+.DS_Store
+
+# User-uploaded content
+/uploads
+
 # Dependencies
 /node_modules
 
 # Environment variables
 .env
-
-# Uploads (these will be handled by a persistent disk)
-/uploads
