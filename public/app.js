@@ -254,17 +254,29 @@ const AtomicworkOutreachApp = () => {
                                                         </h3>
                                                         <div className="space-y-3 text-sm">
                                                             <div>
-                                                                <div className="mb-1">
+                                                                <div className="flex items-center justify-between mb-1">
                                                                     <span className="font-semibold text-gray-600">Subject:</span>
+                                                                    <button onClick={() => copyToClipboard(analysis.outreach?.[option.key]?.linkedin?.subject || '')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                                        </svg>
+                                                                        Copy
+                                                                    </button>
                                                                 </div>
-                                                                <p className="p-2 bg-white rounded border border-gray-200">{analysis.outreach?.linkedin?.subject || 'Not available'}</p>
+                                                                <p className="p-2 bg-white rounded border border-gray-200">{analysis.outreach?.[option.key]?.linkedin?.subject || 'Not available'}</p>
                                                             </div>
                                                             <div>
-                                                                <div className="mb-1">
+                                                                <div className="flex items-center justify-between mb-1">
                                                                     <span className="font-semibold text-gray-600">Message:</span>
+                                                                    <button onClick={() => copyToClipboard(analysis.outreach?.[option.key]?.linkedin?.message || '')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                                        </svg>
+                                                                        Copy
+                                                                    </button>
                                                                 </div>
-                                                                <p className="p-2 bg-white rounded border border-gray-200 whitespace-pre-line">{analysis.outreach?.linkedin?.message || 'Not available'}</p>
-                                                                <p className="text-xs text-gray-500 mt-1">Characters: {(analysis.outreach?.linkedin?.message || '').length}</p>
+                                                                <p className="p-2 bg-white rounded border border-gray-200 whitespace-pre-line">{analysis.outreach?.[option.key]?.linkedin?.message || 'Not available'}</p>
+                                                                <p className="text-xs text-gray-500 mt-1">Characters: {(analysis.outreach?.[option.key]?.linkedin?.message || '').length}</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -279,17 +291,29 @@ const AtomicworkOutreachApp = () => {
                                                         </h3>
                                                         <div className="space-y-3 text-sm">
                                                             <div>
-                                                                <div className="mb-1">
+                                                                <div className="flex items-center justify-between mb-1">
                                                                     <span className="font-semibold text-gray-600">Subject:</span>
+                                                                    <button onClick={() => copyToClipboard(analysis.outreach?.[option.key]?.email?.subject || '')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                                        </svg>
+                                                                        Copy
+                                                                    </button>
                                                                 </div>
-                                                                <p className="p-2 bg-white rounded border border-gray-200">{analysis.outreach?.email?.subject || 'Not available'}</p>
+                                                                <p className="p-2 bg-white rounded border border-gray-200">{analysis.outreach?.[option.key]?.email?.subject || 'Not available'}</p>
                                                             </div>
                                                             <div>
-                                                                <div className="mb-1">
+                                                                <div className="flex items-center justify-between mb-1">
                                                                     <span className="font-semibold text-gray-600">Message:</span>
+                                                                    <button onClick={() => copyToClipboard(analysis.outreach?.[option.key]?.email?.message || '')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                                        </svg>
+                                                                        Copy
+                                                                    </button>
                                                                 </div>
-                                                                <p className="p-2 bg-white rounded border border-gray-200 whitespace-pre-line max-h-48 overflow-y-auto">{analysis.outreach?.email?.message || 'Not available'}</p>
-                                                                <p className="text-xs text-gray-500 mt-1">Characters: {(analysis.outreach?.email?.message || '').length}</p>
+                                                                <p className="p-2 bg-white rounded border border-gray-200 whitespace-pre-line max-h-48 overflow-y-auto">{analysis.outreach?.[option.key]?.email?.message || 'Not available'}</p>
+                                                                <p className="text-xs text-gray-500 mt-1">Characters: {(analysis.outreach?.[option.key]?.email?.message || '').length}</p>
                                                             </div>
                                                         </div>
                                                     </div>

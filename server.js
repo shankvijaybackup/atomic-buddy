@@ -135,7 +135,7 @@ Return ONLY one well-formed JSON:
     const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-7-sonnet-20250219';
     console.log('Using Anthropic model:', outreachModel);
 
-    const outreachBrief = `Create authentic outreach from Atomicwork founder Vijay Shankar - emphasize current role, not past affiliations (300-400 characters total per message).
+    const outreachBrief = `Generate three different outreach approaches: Direct (technical focus), Formal (enterprise focus), Personalized (relational focus). Each with unique subjects and messages.
 
 MY CURRENT POSITION: Vijay Shankar - Atomicwork founder, former Freshworks founder (startup phase), former Zoho/ManageEngine enterprise leader. Currently building agentic service management solutions.
 
@@ -143,16 +143,27 @@ Context (JSON):
 ${JSON.stringify(research, null, 2)}
 
 Rules:
+- Create 3 different approaches with unique content for each
+- Direct: Technical, operational efficiency focus
+- Formal: Enterprise scalability, business alignment focus  
+- Personalized: Relationship building, shared challenges focus
 - Lead with current Atomicwork role and mission
-- Reference past experience only to establish credibility (Freshworks founder, Zoho enterprise leader)
-- Focus on Atomicwork's unique value proposition
-- Be authentic founder-to-founder, not ex-employee
-- Address real enterprise pain points directly
+- Reference past experience only to establish credibility
 - Keep each message between 300-400 characters total
 - Return ONLY JSON in this exact schema:
 {
-  "linkedin": { "subject": "string (50 chars max)", "message": "single string with \\n for new lines (300-400 chars total)" },
-  "email": { "subject": "string (50 chars max)", "message": "single string with \\n for new lines (300-400 chars total)" }
+  "direct": {
+    "linkedin": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" },
+    "email": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" }
+  },
+  "formal": {
+    "linkedin": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" },
+    "email": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" }
+  },
+  "personalized": {
+    "linkedin": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" },
+    "email": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" }
+  }
 }`.trim();
 
     let outreachResp;
