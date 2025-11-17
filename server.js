@@ -135,19 +135,19 @@ Return ONLY one well-formed JSON:
     const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-7-sonnet-20250219';
     console.log('Using Anthropic model:', outreachModel);
 
-    const outreachBrief = `Create authentic, credibility-driven outreach copy that leverages my background as Freshworks ex-founder and Zoho/ManageEngine leader (300-400 characters total per message).
+    const outreachBrief = `Create authentic outreach that leverages my unique journey: Freshworks founder (startup DNA), Zoho/ManageEngine enterprise leader, now Atomicwork (300-400 characters total per message).
 
-USER BACKGROUND: Vijay Shankar - Ex-founder of Freshworks (built scalable SaaS), leader at Zoho/ManageEngine (enterprise IT management), brings startup agility and enterprise experience to Atomicwork.
+MY BACKGROUND: Vijay Shankar - Founded Freshworks (early startup phase, SaaS fundamentals), led enterprise IT management at Zoho/ManageEngine (global scale operations), combines startup agility with enterprise battle scars in Atomicwork.
 
 Context (JSON):
 ${JSON.stringify(research, null, 2)}
 
 Rules:
-- Leverage my Freshworks/Zoho background for credibility on enterprise SaaS and IT management
-- Focus on shared challenges: cost overruns, compliance burdens, operational complexity
-- Be authentic and experienced, not salesy - speak from real enterprise battle scars
-- Address TCO pain points directly with empathy from similar experiences
-- Mention Atomicwork contextually when it solves identified enterprise problems
+- Emphasize my unique founder-to-enterprise journey for credibility
+- Speak from experience: Freshworks startup challenges + Zoho enterprise realities
+- Address real pain points: compliance costs, operational complexity, failed digital initiatives
+- Be authentic peer-to-peer, not salesy - share lessons learned from similar scale challenges
+- Mention Atomicwork as the bridge between startup innovation and enterprise needs
 - Keep each message between 300-400 characters total
 - Return ONLY JSON in this exact schema:
 {
