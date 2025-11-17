@@ -132,7 +132,7 @@ Return ONLY one well-formed JSON:
 
     // ------- 2) Outreach with Anthropic
     console.log('Making Anthropic outreach call...');
-    const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-7-sonnet-20250219';
+    const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-5-sonnet-20241022';
     console.log('Using Anthropic model:', outreachModel);
 
     const outreachBrief = `Generate three different outreach approaches: Direct (technical focus), Formal (enterprise focus), Personalized (relational focus). Each with unique subjects and messages.
@@ -186,6 +186,15 @@ Rules:
     const outreachText = outreachResp.content?.[0]?.text || '';
     console.log('Outreach text length:', outreachText.length);
     console.log('Outreach text preview:', outreachText.substring(0, 300));
+
+    // Check for HTML responses (auth errors)
+    if (/<!doctype html>|<html/i.test(outreachText)) {
+      console.log('Anthropic returned HTML (auth issue)');
+      return res.status(502).json({
+        error: 'Anthropic API returned HTML (likely 401/authorization).',
+        detail: 'Check ANTHROPIC_API_KEY in Render environment variables.',
+      });
+    }
 
     const outreachStr = extractJSON(outreachText);
     console.log('Extracted outreach JSON string:', !!outreachStr);
