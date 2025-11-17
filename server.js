@@ -61,177 +61,90 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'User and target profiles are required.' });
     }
 
-    // ------- 1) Research with Perplexity (sonar-pro)
-    console.log('Making Perplexity research call...');
-    const researchModel = process.env.PERPLEXITY_MODEL || 'sonar-pro';
-    console.log('Using Perplexity model:', researchModel);
+    // ------- Single Perplexity call for everything (faster!)
+    console.log('Making Perplexity call for research + outreach...');
+    const model = process.env.PERPLEXITY_MODEL || 'sonar-pro';
+    console.log('Using Perplexity model:', model);
 
-    const researchPrompt = `You are the world's best analyst and researcher.
+    const combinedPrompt = `You are an expert analyst. Analyze the lead profile, research their company, and generate outreach.
 
-Objectives:
-1) Analyze the pasted LinkedIn lead profile and infer clean, structured persona details including DISC personality analysis.
-2) Research the company named in the profile (and any provided company text) deeply.
-3) Incorporate modern service management context for Atomicwork, explaining credibility (why moving from Freshworks to start Atomicwork makes sense).
-4) Summarize what leaders on Reddit/social media say about why many AI projects fail.
-5) STRICT TONE: any outreach or content must be learning- and sharing-focused, never salesy.
+MY POSITION: Vijay Shankar - Atomicwork founder, former Freshworks founder, former Zoho/ManageEngine leader.
 
-INPUTS
-- USER (sender) PROFILE (free text):
-"""${userProfile}"""
+INPUTS:
+- LEAD PROFILE: """${targetProfile}"""
+- COMPANY CONTEXT: """${knowledgeBase || 'N/A'}"""
 
-- LEAD (target) PROFILE RAW (noisy paste from LinkedIn):
-"""${targetProfile}"""
-
-- COMPANY CONTEXT (optional raw paste; can be empty):
-"""${knowledgeBase || ''}"""
-
-Return ONLY one well-formed JSON:
+Return ONLY JSON:
 {
-  "persona": { "name": "...", "jobTitle": "...", "level": "...", "industry": "...", "company": "...", "recentActivity": [], "personalQuotes": [], "passions": [], "painPoints": [], "decisionMaking": "...", "discProfile": {"primary": "...", "communication": "..."} },
-  "companyResearch": { "name": "...", "industry": "...", "size": "...", "keyProducts": [], "recentNews": [], "strategicInitiatives": [], "risks": [] },
-  "msmContext": { "whyAtomicwork": "one short paragraph tying Freshworks → Atomicwork → agentic service management", "nonSalesyPrinciples": ["...","..."] },
-  "aiFailuresThemes": ["brief bullet #1","brief bullet #2","brief bullet #3","brief bullet #4"]
-}`.trim();
-
-    let researchResp;
-    try {
-      // Add timeout to prevent hanging
-      const researchPromise = perplexity.chat.completions.create({
-        model: researchModel,
-        temperature: 0.2,
-        max_tokens: 2000, // Reduce tokens for faster response
-        messages: [{ role: 'user', content: researchPrompt }],
-      });
-      
-      researchResp = await Promise.race([
-        researchPromise,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Perplexity timeout after 25s')), 25000)
-        )
-      ]);
-      console.log('Perplexity research response received');
-    } catch (e) {
-      console.error('Perplexity research API error:', e);
-      return res.status(502).json({
-        error: 'Perplexity research API call failed',
-        detail: e?.message || String(e),
-      });
+  "persona": { "name": "...", "jobTitle": "...", "level": "...", "industry": "...", "company": "...", "discProfile": {"primary": "D/I/S/C", "communication": "..."} },
+  "companyResearch": { "name": "...", "industry": "...", "size": "...", "keyProducts": [], "recentNews": [] },
+  "outreach": {
+    "direct": {
+      "linkedin": { "subject": "Technical efficiency for [company]", "message": "300-400 char message focusing on operational efficiency" },
+      "email": { "subject": "Different subject", "message": "300-400 char email version" }
+    },
+    "formal": {
+      "linkedin": { "subject": "Enterprise scalability at [company]", "message": "300-400 char message on business alignment" },
+      "email": { "subject": "Different subject", "message": "300-400 char email version" }
+    },
+    "personalized": {
+      "linkedin": { "subject": "Shared challenges in [industry]", "message": "300-400 char relationship-building message" },
+      "email": { "subject": "Different subject", "message": "300-400 char email version" }
     }
-
-    const researchText = researchResp?.choices?.[0]?.message?.content || '';
-    console.log('Research text length:', researchText.length);
-
-    // Handle HTML responses from Perplexity
-    if (/<!doctype html>|<html/i.test(researchText)) {
-      console.log('Perplexity returned HTML (likely auth issue)');
-      return res.status(502).json({
-        error: 'Perplexity API returned HTML (likely 401/authorization).',
-        detail: 'Double-check PPLX/PERPLEXITY API key.',
-      });
-    }
-
-    const researchJSONStr = extractJSON(researchText);
-    console.log('Extracted JSON string:', !!researchJSONStr);
-    if (!researchJSONStr) {
-      console.log('Research text sample:', researchText.substring(0, 500));
-      return res.status(500).json({ error: 'Could not parse research JSON from Perplexity.' });
-    }
-    const research = JSON.parse(researchJSONStr);
-    console.log('Research JSON parsed successfully');
-
-    // ------- 2) Outreach with Anthropic
-    console.log('Making Anthropic outreach call...');
-    const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-opus-20240229';
-    console.log('Using Anthropic model:', outreachModel);
-
-    const outreachBrief = `Generate three different outreach approaches: Direct (technical focus), Formal (enterprise focus), Personalized (relational focus). Each with unique subjects and messages.
-
-MY CURRENT POSITION: Vijay Shankar - Atomicwork founder, former Freshworks founder (startup phase), former Zoho/ManageEngine enterprise leader. Currently building agentic service management solutions.
-
-Context (JSON):
-${JSON.stringify(research, null, 2)}
-
-Rules:
-- Create 3 different approaches with unique content for each
-- Direct: Technical, operational efficiency focus
-- Formal: Enterprise scalability, business alignment focus  
-- Personalized: Relationship building, shared challenges focus
-- Lead with current Atomicwork role and mission
-- Reference past experience only to establish credibility
-- Keep each message between 300-400 characters total
-- Return ONLY JSON in this exact schema:
-{
-  "direct": {
-    "linkedin": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" },
-    "email": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" }
-  },
-  "formal": {
-    "linkedin": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" },
-    "email": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" }
-  },
-  "personalized": {
-    "linkedin": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" },
-    "email": { "subject": "string (50 chars max)", "message": "string (300-400 chars)" }
   }
 }`.trim();
 
-    let outreachResp;
+    let apiResp;
     try {
-      // Add timeout to prevent hanging
-      const outreachPromise = anthropic.messages.create({
-        model: outreachModel,
-        max_tokens: 2500, // Reduce for faster response
+      const apiPromise = perplexity.chat.completions.create({
+        model,
         temperature: 0.3,
-        messages: [{ role: 'user', content: outreachBrief }],
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: combinedPrompt }],
       });
       
-      outreachResp = await Promise.race([
-        outreachPromise,
+      apiResp = await Promise.race([
+        apiPromise,
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Anthropic timeout after 25s')), 25000)
+          setTimeout(() => reject(new Error('Perplexity timeout after 28s')), 28000)
         )
       ]);
-      console.log('Anthropic outreach response received');
+      console.log('Perplexity response received');
     } catch (e) {
-      console.error('Anthropic outreach API error:', e);
+      console.error('Perplexity API error:', e);
       return res.status(502).json({
-        error: 'Anthropic outreach API call failed',
+        error: 'Perplexity API call failed',
         detail: e?.message || String(e),
       });
     }
 
-    const outreachText = outreachResp.content?.[0]?.text || '';
-    console.log('Outreach text length:', outreachText.length);
-    console.log('Outreach text preview:', outreachText.substring(0, 300));
+    const responseText = apiResp?.choices?.[0]?.message?.content || '';
+    console.log('Response text length:', responseText.length);
 
-    // Check for HTML responses (auth errors)
-    if (/<!doctype html>|<html/i.test(outreachText)) {
-      console.log('Anthropic returned HTML (auth issue)');
+    if (/<!doctype html>|<html/i.test(responseText)) {
+      console.log('Perplexity returned HTML (likely auth issue)');
       return res.status(502).json({
-        error: 'Anthropic API returned HTML (likely 401/authorization).',
-        detail: 'Check ANTHROPIC_API_KEY in Render environment variables.',
+        error: 'Perplexity API returned HTML (likely 401/authorization).',
+        detail: 'Double-check PPLX_API_KEY.',
       });
     }
 
-    const outreachStr = extractJSON(outreachText);
-    console.log('Extracted outreach JSON string:', !!outreachStr);
-    if (!outreachStr) {
-      console.log('Outreach text sample:', outreachText.substring(0, 500));
-      return res.status(500).json({ error: 'Could not parse outreach JSON from Anthropic.' });
+    const jsonStr = extractJSON(responseText);
+    console.log('Extracted JSON string:', !!jsonStr);
+    if (!jsonStr) {
+      console.log('Response text sample:', responseText.substring(0, 500));
+      return res.status(500).json({ error: 'Could not parse JSON from Perplexity.' });
     }
-    console.log('Parsed outreach JSON length:', outreachStr.length);
-    const outreach = JSON.parse(outreachStr);
-    console.log('Outreach JSON parsed successfully');
+    const data = JSON.parse(jsonStr);
+    console.log('JSON parsed successfully');
 
-    // Final payload consumed by your UI
+    // Return combined data from single Perplexity call
     return res.json({
       leadPersona: {
-        persona: research.persona,
-        companyData: research.companyResearch,
-        msdContext: research.msmContext,
-        aiFailuresThemes: research.aiFailuresThemes,
+        persona: data.persona || {},
+        companyData: data.companyResearch || {},
       },
-      outreach,
+      outreach: data.outreach || {},
     });
   } catch (err) {
     console.error('Analyze error:', err);
