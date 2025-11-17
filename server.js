@@ -61,9 +61,9 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'User and target profiles are required.' });
     }
 
-    // ------- 1) Research with Anthropic (default claude-3-5-sonnet-20240620)
+    // ------- 1) Research with Anthropic (default claude-3-7-sonnet-20250219)
     console.log('Making Anthropic research call...');
-    const researchModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-5-sonnet-20240620';
+    const researchModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-7-sonnet-20250219';
     console.log('Using Anthropic model:', researchModel);
     const researchPrompt = `
 You are the world's best analyst and researcher.

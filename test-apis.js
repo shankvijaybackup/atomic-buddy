@@ -12,8 +12,28 @@ async function testAPIs() {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
+    // First, list available models
+    console.log('  Listing available models...');
+    const modelsResponse = await fetch('https://api.anthropic.com/v1/models', {
+      headers: {
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      }
+    });
+
+    if (!modelsResponse.ok) {
+      console.log('  ❌ Cannot list models:', modelsResponse.status, modelsResponse.statusText);
+    } else {
+      const modelsData = await modelsResponse.json();
+      console.log('  Available models:', modelsData.data?.map(m => m.id) || 'None');
+    }
+
+    // Then test with the model used in server
+    const testModel = 'claude-3-7-sonnet-20250219';
+    console.log(`  Testing with model: ${testModel}`);
+
     const response = await anthropic.messages.create({
-      model: 'claude-3-sonnet-20240229',
+      model: testModel,
       max_tokens: 10,
       messages: [{ role: 'user', content: 'Say "Hello"' }],
     });
