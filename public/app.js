@@ -63,11 +63,10 @@ const AtomicworkOutreachApp = () => {
     const copyToClipboard = async (text, type) => {
         try {
             await navigator.clipboard.writeText(text);
-            alert(`${type} copied to clipboard!`);
+            // Removed annoying popup alert
         } catch (err)
         {
             console.error('Failed to copy: ', err);
-            alert('Failed to copy to clipboard');
         }
     };
 
@@ -255,26 +254,14 @@ const AtomicworkOutreachApp = () => {
                                                         </h3>
                                                         <div className="space-y-3 text-sm">
                                                             <div>
-                                                                <div className="flex items-center justify-between mb-1">
+                                                                <div className="mb-1">
                                                                     <span className="font-semibold text-gray-600">Subject:</span>
-                                                                    <button onClick={() => copyToClipboard(analysis.outreach?.linkedin?.subject || '', 'LinkedIn Subject')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                                        </svg>
-                                                                        Copy
-                                                                    </button>
                                                                 </div>
                                                                 <p className="p-2 bg-white rounded border border-gray-200">{analysis.outreach?.linkedin?.subject || 'Not available'}</p>
                                                             </div>
                                                             <div>
-                                                                <div className="flex items-center justify-between mb-1">
+                                                                <div className="mb-1">
                                                                     <span className="font-semibold text-gray-600">Message:</span>
-                                                                    <button onClick={() => copyToClipboard(analysis.outreach?.linkedin?.message || '', 'LinkedIn Message')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                                        </svg>
-                                                                        Copy
-                                                                    </button>
                                                                 </div>
                                                                 <p className="p-2 bg-white rounded border border-gray-200 whitespace-pre-line">{analysis.outreach?.linkedin?.message || 'Not available'}</p>
                                                                 <p className="text-xs text-gray-500 mt-1">Characters: {(analysis.outreach?.linkedin?.message || '').length}</p>
@@ -292,26 +279,14 @@ const AtomicworkOutreachApp = () => {
                                                         </h3>
                                                         <div className="space-y-3 text-sm">
                                                             <div>
-                                                                <div className="flex items-center justify-between mb-1">
+                                                                <div className="mb-1">
                                                                     <span className="font-semibold text-gray-600">Subject:</span>
-                                                                    <button onClick={() => copyToClipboard(analysis.outreach?.email?.subject || '', 'Email Subject')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                                        </svg>
-                                                                        Copy
-                                                                    </button>
                                                                 </div>
                                                                 <p className="p-2 bg-white rounded border border-gray-200">{analysis.outreach?.email?.subject || 'Not available'}</p>
                                                             </div>
                                                             <div>
-                                                                <div className="flex items-center justify-between mb-1">
+                                                                <div className="mb-1">
                                                                     <span className="font-semibold text-gray-600">Message:</span>
-                                                                    <button onClick={() => copyToClipboard(analysis.outreach?.email?.message || '', 'Email Message')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                                        </svg>
-                                                                        Copy
-                                                                    </button>
                                                                 </div>
                                                                 <p className="p-2 bg-white rounded border border-gray-200 whitespace-pre-line max-h-48 overflow-y-auto">{analysis.outreach?.email?.message || 'Not available'}</p>
                                                                 <p className="text-xs text-gray-500 mt-1">Characters: {(analysis.outreach?.email?.message || '').length}</p>

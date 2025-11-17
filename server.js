@@ -135,19 +135,19 @@ Return ONLY one well-formed JSON:
     const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-7-sonnet-20250219';
     console.log('Using Anthropic model:', outreachModel);
 
-    const outreachBrief = `Create authentic outreach that leverages my unique journey: Freshworks founder (startup DNA), Zoho/ManageEngine enterprise leader, now Atomicwork (300-400 characters total per message).
+    const outreachBrief = `Create authentic outreach from Atomicwork founder Vijay Shankar - emphasize current role, not past affiliations (300-400 characters total per message).
 
-MY BACKGROUND: Vijay Shankar - Founded Freshworks (early startup phase, SaaS fundamentals), led enterprise IT management at Zoho/ManageEngine (global scale operations), combines startup agility with enterprise battle scars in Atomicwork.
+MY CURRENT POSITION: Vijay Shankar - Atomicwork founder, former Freshworks founder (startup phase), former Zoho/ManageEngine enterprise leader. Currently building agentic service management solutions.
 
 Context (JSON):
 ${JSON.stringify(research, null, 2)}
 
 Rules:
-- Emphasize my unique founder-to-enterprise journey for credibility
-- Speak from experience: Freshworks startup challenges + Zoho enterprise realities
-- Address real pain points: compliance costs, operational complexity, failed digital initiatives
-- Be authentic peer-to-peer, not salesy - share lessons learned from similar scale challenges
-- Mention Atomicwork as the bridge between startup innovation and enterprise needs
+- Lead with current Atomicwork role and mission
+- Reference past experience only to establish credibility (Freshworks founder, Zoho enterprise leader)
+- Focus on Atomicwork's unique value proposition
+- Be authentic founder-to-founder, not ex-employee
+- Address real enterprise pain points directly
 - Keep each message between 300-400 characters total
 - Return ONLY JSON in this exact schema:
 {
