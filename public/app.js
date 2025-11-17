@@ -210,7 +210,7 @@ const AtomicworkOutreachApp = () => {
                 {activeTab === 'results' && (
                     <div className="space-y-6">
                         {analysis ? (
-                            <>
+                            <div className="space-y-6">
                                 {/* Personality Analysis */}
                                 <div className="bg-white rounded-xl shadow-md p-6">
                                     {/* ================================================================= */}
@@ -312,7 +312,8 @@ const AtomicworkOutreachApp = () => {
                                             </div>
                                         </div>
                                     </div>
-                            </>
+                                    </div>
+                            </div>
                         ) : (
                             <div className="bg-white rounded-xl shadow-md p-6 text-center">
                                 <h2 className="text-xl font-semibold mb-4 text-gray-700">Awaiting Analysis</h2>
