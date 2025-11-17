@@ -9,6 +9,9 @@ const bodyParser = require('body-parser');
 // OpenAI SDK (we'll use it twice: once for OpenAI, once pointed at Perplexity)
 const OpenAI = require('openai');
 
+// Anthropic SDK for research
+const Anthropic = require('@anthropic-ai/sdk');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,9 +21,9 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------- clients
-// 1) OpenAI for research
-const openaiResearch = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// 1) Anthropic for research
+const anthropic = new Anthropic({
+  apiKey: process.env.OPENAI_API_KEY, // reusing the env var name
 });
 
 // 2) Perplexity via OpenAI-compatible interface
@@ -58,10 +61,10 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'User and target profiles are required.' });
     }
 
-    // ------- 1) Research with OpenAI (default gpt-4o)
-    console.log('Making OpenAI research call...');
-    const researchModel = process.env.OPENAI_RESEARCH_MODEL || 'gpt-4o';
-    console.log('Using OpenAI model:', researchModel);
+    // ------- 1) Research with Anthropic (default claude-3-5-sonnet-20240620)
+    console.log('Making Anthropic research call...');
+    const researchModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-5-sonnet-20240620';
+    console.log('Using Anthropic model:', researchModel);
     const researchPrompt = `
 You are the world's best analyst and researcher.
 
@@ -91,20 +94,21 @@ Return ONLY one well-formed JSON:
 }
 `.trim();
 
-    const researchResp = await openaiResearch.chat.completions.create({
+    const researchResp = await anthropic.messages.create({
       model: researchModel,
+      max_tokens: 4096,
       temperature: 0.2,
       messages: [{ role: 'user', content: researchPrompt }],
     });
 
-    console.log('OpenAI research response received');
-    const researchText = researchResp.choices?.[0]?.message?.content || '';
+    console.log('Anthropic research response received');
+    const researchText = researchResp.content?.[0]?.text || '';
     console.log('Research text length:', researchText.length);
     const researchJSONStr = extractJSON(researchText);
     console.log('Extracted JSON string:', !!researchJSONStr);
     if (!researchJSONStr) {
       console.log('Research text sample:', researchText.substring(0, 500));
-      return res.status(500).json({ error: 'Could not parse research JSON from OpenAI.' });
+      return res.status(500).json({ error: 'Could not parse research JSON from Anthropic.' });
     }
     const research = JSON.parse(researchJSONStr);
     console.log('Research JSON parsed successfully');
