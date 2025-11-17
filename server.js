@@ -132,7 +132,7 @@ Return ONLY one well-formed JSON:
 
     // ------- 2) Outreach with Anthropic
     console.log('Making Anthropic outreach call...');
-    const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-5-sonnet-20241022';
+    const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-5-sonnet-20240620';
     console.log('Using Anthropic model:', outreachModel);
 
     const outreachBrief = `Generate three different outreach approaches: Direct (technical focus), Formal (enterprise focus), Personalized (relational focus). Each with unique subjects and messages.
