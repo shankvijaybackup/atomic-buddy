@@ -61,9 +61,9 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'User and target profiles are required.' });
     }
 
-    // ------- 1) Research with Anthropic (default claude-3-5-sonnet-20240620)
+    // ------- 1) Research with Anthropic (default claude-3-5-sonnet-20241022)
     console.log('Making Anthropic research call...');
-    const researchModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-5-sonnet-20240620';
+    const researchModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-5-sonnet-20241022';
     console.log('Using Anthropic model:', researchModel);
     const researchPrompt = `
 You are the world's best analyst and researcher.
@@ -94,14 +94,22 @@ Return ONLY one well-formed JSON:
 }
 `.trim();
 
-    const researchResp = await anthropic.messages.create({
-      model: researchModel,
-      max_tokens: 4096,
-      temperature: 0.2,
-      messages: [{ role: 'user', content: researchPrompt }],
-    });
-
-    console.log('Anthropic research response received');
+    let researchResp;
+    try {
+      researchResp = await anthropic.messages.create({
+        model: researchModel,
+        max_tokens: 4096,
+        temperature: 0.2,
+        messages: [{ role: 'user', content: researchPrompt }],
+      });
+      console.log('Anthropic research response received');
+    } catch (e) {
+      console.error('Anthropic API error:', e);
+      return res.status(502).json({
+        error: 'Anthropic API call failed',
+        detail: e?.message || String(e),
+      });
+    }
     const researchText = researchResp.content?.[0]?.text || '';
     console.log('Research text length:', researchText.length);
     const researchJSONStr = extractJSON(researchText);
