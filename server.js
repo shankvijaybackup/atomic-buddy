@@ -135,17 +135,19 @@ Return ONLY one well-formed JSON:
     const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-7-sonnet-20250219';
     console.log('Using Anthropic model:', outreachModel);
 
-    const outreachBrief = `Create direct, business-focused outreach copy that addresses cost savings and TCO pain points (300-400 characters total per message).
+    const outreachBrief = `Create authentic, credibility-driven outreach copy that leverages my background as Freshworks ex-founder and Zoho/ManageEngine leader (300-400 characters total per message).
+
+USER BACKGROUND: Vijay Shankar - Ex-founder of Freshworks (built scalable SaaS), leader at Zoho/ManageEngine (enterprise IT management), brings startup agility and enterprise experience to Atomicwork.
 
 Context (JSON):
 ${JSON.stringify(research, null, 2)}
 
 Rules:
-- Focus on operational efficiency, cost reduction, and TCO challenges
-- Address specific pain points from the research (compliance, scalability, integration)
-- Be direct and professional, not flattering
-- Mention Atomicwork only when it directly solves identified problems
-- Reference AI failure themes to show understanding of risks
+- Leverage my Freshworks/Zoho background for credibility on enterprise SaaS and IT management
+- Focus on shared challenges: cost overruns, compliance burdens, operational complexity
+- Be authentic and experienced, not salesy - speak from real enterprise battle scars
+- Address TCO pain points directly with empathy from similar experiences
+- Mention Atomicwork contextually when it solves identified enterprise problems
 - Keep each message between 300-400 characters total
 - Return ONLY JSON in this exact schema:
 {
