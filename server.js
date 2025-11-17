@@ -61,15 +61,15 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'User and target profiles are required.' });
     }
 
-    // ------- 1) Research with Anthropic (default claude-3-7-sonnet-20250219)
-    console.log('Making Anthropic research call...');
-    const researchModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-7-sonnet-20250219';
-    console.log('Using Anthropic model:', researchModel);
-    const researchPrompt = `
-You are the world's best analyst and researcher.
+    // ------- 1) Research with Perplexity (sonar-pro)
+    console.log('Making Perplexity research call...');
+    const researchModel = process.env.PERPLEXITY_MODEL || 'sonar-pro';
+    console.log('Using Perplexity model:', researchModel);
+
+    const researchPrompt = `You are the world's best analyst and researcher.
 
 Objectives:
-1) Analyze the pasted LinkedIn lead profile and infer clean, structured persona details.
+1) Analyze the pasted LinkedIn lead profile and infer clean, structured persona details including DISC personality analysis.
 2) Research the company named in the profile (and any provided company text) deeply.
 3) Incorporate modern service management context for Atomicwork, explaining credibility (why moving from Freshworks to start Atomicwork makes sense).
 4) Summarize what leaders on Reddit/social media say about why many AI projects fail.
@@ -87,102 +87,96 @@ INPUTS
 
 Return ONLY one well-formed JSON:
 {
-  "persona": { "name": "...", "jobTitle": "...", "level": "...", "industry": "...", "company": "...", "recentActivity": [], "personalQuotes": [], "passions": [], "painPoints": [], "decisionMaking": "..." },
+  "persona": { "name": "...", "jobTitle": "...", "level": "...", "industry": "...", "company": "...", "recentActivity": [], "personalQuotes": [], "passions": [], "painPoints": [], "decisionMaking": "...", "discProfile": {"primary": "...", "communication": "..."} },
   "companyResearch": { "name": "...", "industry": "...", "size": "...", "keyProducts": [], "recentNews": [], "strategicInitiatives": [], "risks": [] },
   "msmContext": { "whyAtomicwork": "one short paragraph tying Freshworks → Atomicwork → agentic service management", "nonSalesyPrinciples": ["...","..."] },
   "aiFailuresThemes": ["brief bullet #1","brief bullet #2","brief bullet #3","brief bullet #4"]
-}
-`.trim();
+}`.trim();
 
     let researchResp;
     try {
-      researchResp = await anthropic.messages.create({
+      researchResp = await perplexity.chat.completions.create({
         model: researchModel,
-        max_tokens: 4096,
         temperature: 0.2,
         messages: [{ role: 'user', content: researchPrompt }],
       });
-      console.log('Anthropic research response received');
+      console.log('Perplexity research response received');
     } catch (e) {
-      console.error('Anthropic API error:', e);
+      console.error('Perplexity research API error:', e);
       return res.status(502).json({
-        error: 'Anthropic API call failed',
+        error: 'Perplexity research API call failed',
         detail: e?.message || String(e),
       });
     }
-    const researchText = researchResp.content?.[0]?.text || '';
+
+    const researchText = researchResp?.choices?.[0]?.message?.content || '';
     console.log('Research text length:', researchText.length);
+
+    // Handle HTML responses from Perplexity
+    if (/<!doctype html>|<html/i.test(researchText)) {
+      console.log('Perplexity returned HTML (likely auth issue)');
+      return res.status(502).json({
+        error: 'Perplexity API returned HTML (likely 401/authorization).',
+        detail: 'Double-check PPLX/PERPLEXITY API key.',
+      });
+    }
+
     const researchJSONStr = extractJSON(researchText);
     console.log('Extracted JSON string:', !!researchJSONStr);
     if (!researchJSONStr) {
       console.log('Research text sample:', researchText.substring(0, 500));
-      return res.status(500).json({ error: 'Could not parse research JSON from Anthropic.' });
+      return res.status(500).json({ error: 'Could not parse research JSON from Perplexity.' });
     }
     const research = JSON.parse(researchJSONStr);
     console.log('Research JSON parsed successfully');
 
-    // ------- 2) Outreach with Perplexity Sonar
-    if (!PPLX_KEY) {
-      return res.status(500).json({ error: 'Missing PERPLEXITY_API_KEY/PPLX_API_KEY on server.' });
-    }
+    // ------- 2) Outreach with Anthropic
+    console.log('Making Anthropic outreach call...');
+    const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-7-sonnet-20250219';
+    console.log('Using Anthropic model:', outreachModel);
 
-    console.log('Making Perplexity outreach call...');
-    const ppxModel = process.env.PERPLEXITY_MODEL || 'sonar-pro';
-    console.log('Using Perplexity model:', ppxModel);
-
-    const outreachBrief = `
-Create non-salesy outreach copy focused on learning & sharing.
+    const outreachBrief = `Create concise, professional outreach copy focused on learning & sharing (300-400 characters total per message).
 
 Context (JSON):
 ${JSON.stringify(research, null, 2)}
 
 Rules:
-- Never sound salesy; be human, curious, credible.
-- Mention Atomicwork only to establish credibility (agentic service management) and prior Freshworks experience if it helps.
-- You may reference common AI project failure themes ONLY to empathize, not to pitch.
-- Personalize to the lead persona and their company situation based on research.
+- Keep each message between 300-400 characters total
+- Never sound salesy; be human, curious, credible
+- Mention Atomicwork only to establish credibility (agentic service management) and prior Freshworks experience if it helps
+- You may reference common AI project failure themes ONLY to empathize, not to pitch
+- Personalize to the lead persona and their company situation based on research
 - Return ONLY JSON in this exact schema:
 {
-  "linkedin": { "subject": "string", "message": "single string with \\n for new lines" },
-  "email": { "subject": "string", "message": "single string with \\n for new lines" }
-}
-`.trim();
+  "linkedin": { "subject": "string (50 chars max)", "message": "single string with \\n for new lines (300-400 chars total)" },
+  "email": { "subject": "string (50 chars max)", "message": "single string with \\n for new lines (300-400 chars total)" }
+}`.trim();
 
-    let ppxCompletion;
+    let outreachResp;
     try {
-      ppxCompletion = await perplexity.chat.completions.create({
-        model: ppxModel,
-        // NOTE: Sonar "online" models can browse by default; no special params needed.
+      outreachResp = await anthropic.messages.create({
+        model: outreachModel,
+        max_tokens: 1000,
         temperature: 0.3,
         messages: [{ role: 'user', content: outreachBrief }],
       });
-      console.log('Perplexity API call successful');
+      console.log('Anthropic outreach response received');
     } catch (e) {
-      // Common causes: wrong model name or key/entitlements → surface a helpful message.
-      console.error('Perplexity API error:', e);
+      console.error('Anthropic outreach API error:', e);
       return res.status(502).json({
-        error: 'Perplexity API call failed',
+        error: 'Anthropic outreach API call failed',
         detail: e?.message || String(e),
       });
     }
 
-    const ppxText = ppxCompletion?.choices?.[0]?.message?.content || '';
-    console.log('Perplexity response text length:', ppxText.length);
-    // If the API returns an HTML Cloudflare/401 page (common when key is wrong), detect & explain:
-    if (/<!doctype html>|<html/i.test(ppxText)) {
-      console.log('Perplexity returned HTML (likely auth issue)');
-      return res.status(502).json({
-        error: 'Perplexity API returned HTML (likely 401/authorization).',
-        detail:
-          'Double-check PPLX/PERPLEXITY API key and model name. If you are on a restricted tier, ensure your key is entitled for this model.',
-      });
-    }
+    const outreachText = outreachResp.content?.[0]?.text || '';
+    console.log('Outreach text length:', outreachText.length);
 
-    const outreachStr = extractJSON(ppxText);
+    const outreachStr = extractJSON(outreachText);
     console.log('Extracted outreach JSON string:', !!outreachStr);
     if (!outreachStr) {
-      console.log('Outreach text sample:', ppxText.substring(0, 500));
-      return res.status(500).json({ error: 'Could not parse outreach JSON from Perplexity.' });
+      console.log('Outreach text sample:', outreachText.substring(0, 500));
+      return res.status(500).json({ error: 'Could not parse outreach JSON from Anthropic.' });
     }
     const outreach = JSON.parse(outreachStr);
     console.log('Outreach JSON parsed successfully');
