@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head>
+    <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>AtomicBiddy — Sign in</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    </head><body class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <div class="max-w-md mx-auto mt-24 bg-white rounded-2xl shadow-lg p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-black flex items-center justify-center text-white font-bold">AB</div>
+          <div><h1 class="text-xl font-semibold">AtomicBiddy</h1><p class="text-sm text-gray-500">Social selling research assistant</p></div>
+        </div>
+        <h2 class="text-lg font-semibold mb-2">Welcome</h2>
+        <p class="text-sm text-gray-600 mb-6">Sign in to continue.</p>
+        <a href="/auth/linkedin" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition">Sign in with LinkedIn</a>
+        <p id="status" class="text-xs text-gray-500 mt-4 text-center"></p>
+      </div>
+      <script>
+        fetch('/api/me').then(r=>r.ok?location='/app':(document.getElementById('status').textContent='Not signed in.'));
+      </script>
+    </body></html>
+    

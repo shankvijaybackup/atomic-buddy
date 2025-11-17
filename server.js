@@ -1,141 +1,207 @@
+// server.js — no auth, OpenAI (4o) for research, Perplexity Sonar for outreach (OpenAI-compatible)
+require('dotenv').config();
+
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-require('dotenv').config();
 
-const Anthropic = require('@anthropic-ai/sdk');
+// OpenAI SDK (we'll use it twice: once for OpenAI, once pointed at Perplexity)
 const OpenAI = require('openai');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-
+// ---------- middleware & static
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
-const extractJSON = (text) => {
-    const match = text.match(/\{[\s\S]*\}/);
-    return match ? match[0] : null;
-};
-
-app.post('/api/analyze', async (req, res) => {
-    try {
-        const { userProfile, targetProfile, knowledgeBase } = req.body;
-
-        if (!userProfile || !targetProfile) {
-            return res.status(400).json({ error: 'User and target profiles are required.' });
-        }
-        
-        const personaPrompt = `
-          You are an expert data processor and personality analyst. The following text is a raw copy-paste from LinkedIn pages, containing a lot of irrelevant UI text.
-
-          Your first job is to intelligently parse the raw text to find the actual, meaningful profile information, IGNORING all UI elements.
-
-          After you have mentally isolated the clean profile data, perform a deep analysis and generate a single, valid JSON object with the following structure. Do not include any explanatory text or markdown.
-
-          RAW LEAD PROFILE TEXT: """${targetProfile}"""
-          RAW COMPANY PROFILE TEXT: """${knowledgeBase}"""
-
-          Return ONLY the JSON object:
-          {
-            "persona": { "name": "...", "jobTitle": "...", "level": "...", "industry": "...", "company": "...", "recentActivity": [], "personalQuotes": [], "passions": [], "painPoints": [], "decisionMaking": "..." },
-            "companyData": { "name": "...", "industry": "...", "size": "...", "recentNews": [], "businessMetrics": [], "challenges": [] },
-            "discProfile": { "primary": "...", "traits": [], "communication": "..." },
-            "oceanProfile": {
-                "openness": { "score": "integer 0-10", "summary": "brief summary" },
-                "conscientiousness": { "score": "integer 0-10", "summary": "brief summary" },
-                "extraversion": { "score": "integer 0-10", "summary": "brief summary" },
-                "agreeableness": { "score": "integer 0-10", "summary": "brief summary" },
-                "neuroticism": { "score": "integer 0-10", "summary": "brief summary" }
-            }
-          }
-        `;
-
-        const personaMessage = await anthropic.messages.create({
-            model: "claude-3-5-sonnet-20240620",
-            max_tokens: 2000,
-            messages: [{ role: "user", content: personaPrompt }]
-        });
-
-        const jsonString = extractJSON(personaMessage.content[0].text);
-        if (!jsonString) {
-            console.error("Failed to extract JSON from persona analysis:", personaMessage.content[0].text);
-            return res.status(500).json({ error: 'Failed to parse persona analysis from AI response.' });
-        }
-
-        const personaData = JSON.parse(jsonString);
-        console.log('Persona analysis completed successfully.');
-
-        const basePrompt = `
-          TARGET PROFILE:
-          - Name: ${personaData.persona.name}
-          - Title: ${personaData.persona.jobTitle}
-          - Company: ${personaData.persona.company}
-          - Recent Activity: ${personaData.persona.recentActivity?.join(', ') || 'Not available'}
-          COMPANY INSIGHTS:
-          - Recent Company News: ${personaData.companyData?.recentNews?.join(', ') || 'Not available'}
-          - Business Metrics: ${personaData.companyData?.businessMetrics?.join(', ') || 'Not available'}
-          YOUR BACKGROUND: Ex-Freshworks founder, ITIL expert, now building Atomicwork's agentic service management platform.
-        `;
-        
-        const jsonFormatRule = `CRITICAL RULE: Return a single, valid JSON object and nothing else. All strings within the JSON must be properly escaped. Specifically, any newline characters in the 'message' fields MUST be represented as \\n.`;
-
-        // =================================================================
-        // THE FIX: Adding a more explicit rule for Gemini to prevent bad escape characters.
-        // =================================================================
-        const geminiJsonFormatRule = `${jsonFormatRule} IMPORTANT: Do not use any single backslashes (\\) in the message text unless it is for a newline (\\n).`
-
-        const outreachPromises = [
-            openai.chat.completions.create({ model: "gpt-4", messages: [{ role: "user", content: `${basePrompt} Generate a DIRECT & TECHNICAL message. ${jsonFormatRule} JSON format: {"linkedin":{"subject": "s", "message": "m"},"email":{"subject": "s", "message": "m"}}` }], max_tokens: 800 }),
-            anthropic.messages.create({ model: "claude-3-5-sonnet-20240620", messages: [{ role: "user", content: `${basePrompt} Generate a FORMAL & ENTERPRISE message. ${jsonFormatRule} JSON format: {"linkedin":{"subject": "s", "message": "m"},"email":{"subject": "s", "message": "m"}}` }], max_tokens: 800 }),
-            genAI.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent(`${basePrompt} Generate a PERSONALIZED & RELATIONSHIP-FOCUSED message. ${geminiJsonFormatRule} JSON format: {"linkedin":{"subject": "s", "message": "m"},"email":{"subject": "s", "message": "m"}}`)
-        ];
-        
-        const [openaiRes, claudeRes, geminiRes] = await Promise.allSettled(outreachPromises);
-
-        const getJson = (response, modelName) => {
-            try {
-                if (response.status === 'fulfilled') {
-                    const text = modelName === 'openai' ? response.value.choices[0].message.content :
-                                 modelName === 'claude' ? response.value.content[0].text :
-                                 response.value.response.text();
-                    
-                    const jsonStr = extractJSON(text);
-                    if (!jsonStr) { throw new Error(`Could not extract JSON from ${modelName}`); }
-                    return JSON.parse(jsonStr);
-                }
-            } catch (e) { console.error(`Error parsing ${modelName} JSON`, e); }
-            return { linkedin: { subject: "Error", message: "Error generating content." }, email: { subject: "Error", message: "Error generating content." } };
-        };
-
-        const result = {
-            leadPersona: {
-                persona: personaData.persona,
-                discProfile: personaData.discProfile,
-                oceanProfile: personaData.oceanProfile,
-                companyData: personaData.companyData,
-            },
-            outreach: {
-                direct: getJson(openaiRes, 'openai'),
-                formal: getJson(claudeRes, 'claude'),
-                personalized: getJson(geminiRes, 'gemini')
-            }
-        };
-
-        res.json(result);
-
-    } catch (error) {
-        console.error('Analysis error:', error);
-        res.status(500).json({ error: 'An internal error occurred during analysis.' });
-    }
+// ---------- clients
+// 1) OpenAI for research
+const openaiResearch = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
+// 2) Perplexity via OpenAI-compatible interface
+// Accept either PERPLEXITY_API_KEY or PPLX_API_KEY
+const PPLX_KEY = process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY || '';
+const perplexity = new OpenAI({
+  apiKey: PPLX_KEY,
+  baseURL: 'https://api.perplexity.ai', // per official docs
+});
+
+// ---------- helpers
+const extractJSON = (text) => {
+  if (!text) return null;
+  // grab the last JSON object looking chunk
+  const m = text.match(/\{[\s\S]*\}$/m) || text.match(/\{[\s\S]*\}/m);
+  return m ? m[0] : null;
+};
+
+// ---------- health
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+/**
+ * POST /api/analyze
+ * Body: { userProfile: string, targetProfile: string, knowledgeBase?: string }
+ * - Uses OpenAI to perform deep research (company + context)
+ * - Uses Perplexity (single model) to generate LI + Email copy
+ */
+app.post('/api/analyze', async (req, res) => {
+  try {
+    console.log('Starting analysis...');
+    const { userProfile, targetProfile, knowledgeBase } = req.body || {};
+    console.log('Request body received:', { userProfile: !!userProfile, targetProfile: !!targetProfile, knowledgeBase: !!knowledgeBase });
+    
+    if (!userProfile || !targetProfile) {
+      return res.status(400).json({ error: 'User and target profiles are required.' });
+    }
+
+    // ------- 1) Research with OpenAI (default gpt-4o)
+    console.log('Making OpenAI research call...');
+    const researchModel = process.env.OPENAI_RESEARCH_MODEL || 'gpt-4o';
+    console.log('Using OpenAI model:', researchModel);
+    const researchPrompt = `
+You are the world's best analyst and researcher.
+
+Objectives:
+1) Analyze the pasted LinkedIn lead profile and infer clean, structured persona details.
+2) Research the company named in the profile (and any provided company text) deeply.
+3) Incorporate modern service management context for Atomicwork, explaining credibility (why moving from Freshworks to start Atomicwork makes sense).
+4) Summarize what leaders on Reddit/social media say about why many AI projects fail.
+5) STRICT TONE: any outreach or content must be learning- and sharing-focused, never salesy.
+
+INPUTS
+- USER (sender) PROFILE (free text):
+"""${userProfile}"""
+
+- LEAD (target) PROFILE RAW (noisy paste from LinkedIn):
+"""${targetProfile}"""
+
+- COMPANY CONTEXT (optional raw paste; can be empty):
+"""${knowledgeBase || ''}"""
+
+Return ONLY one well-formed JSON:
+{
+  "persona": { "name": "...", "jobTitle": "...", "level": "...", "industry": "...", "company": "...", "recentActivity": [], "personalQuotes": [], "passions": [], "painPoints": [], "decisionMaking": "..." },
+  "companyResearch": { "name": "...", "industry": "...", "size": "...", "keyProducts": [], "recentNews": [], "strategicInitiatives": [], "risks": [] },
+  "msmContext": { "whyAtomicwork": "one short paragraph tying Freshworks → Atomicwork → agentic service management", "nonSalesyPrinciples": ["...","..."] },
+  "aiFailuresThemes": ["brief bullet #1","brief bullet #2","brief bullet #3","brief bullet #4"]
+}
+`.trim();
+
+    const researchResp = await openaiResearch.chat.completions.create({
+      model: researchModel,
+      temperature: 0.2,
+      messages: [{ role: 'user', content: researchPrompt }],
+    });
+
+    console.log('OpenAI research response received');
+    const researchText = researchResp.choices?.[0]?.message?.content || '';
+    console.log('Research text length:', researchText.length);
+    const researchJSONStr = extractJSON(researchText);
+    console.log('Extracted JSON string:', !!researchJSONStr);
+    if (!researchJSONStr) {
+      console.log('Research text sample:', researchText.substring(0, 500));
+      return res.status(500).json({ error: 'Could not parse research JSON from OpenAI.' });
+    }
+    const research = JSON.parse(researchJSONStr);
+    console.log('Research JSON parsed successfully');
+
+    // ------- 2) Outreach with Perplexity Sonar
+    if (!PPLX_KEY) {
+      return res.status(500).json({ error: 'Missing PERPLEXITY_API_KEY/PPLX_API_KEY on server.' });
+    }
+
+    console.log('Making Perplexity outreach call...');
+    const ppxModel = process.env.PERPLEXITY_MODEL || 'llama-3.1-sonar-large-128k-online';
+    console.log('Using Perplexity model:', ppxModel);
+
+    const outreachBrief = `
+Create non-salesy outreach copy focused on learning & sharing.
+
+Context (JSON):
+${JSON.stringify(research, null, 2)}
+
+Rules:
+- Never sound salesy; be human, curious, credible.
+- Mention Atomicwork only to establish credibility (agentic service management) and prior Freshworks experience if it helps.
+- You may reference common AI project failure themes ONLY to empathize, not to pitch.
+- Personalize to the lead persona and their company situation based on research.
+- Return ONLY JSON in this exact schema:
+{
+  "linkedin": { "subject": "string", "message": "single string with \\n for new lines" },
+  "email": { "subject": "string", "message": "single string with \\n for new lines" }
+}
+`.trim();
+
+    let ppxCompletion;
+    try {
+      ppxCompletion = await perplexity.chat.completions.create({
+        model: ppxModel,
+        // NOTE: Sonar "online" models can browse by default; no special params needed.
+        temperature: 0.3,
+        messages: [{ role: 'user', content: outreachBrief }],
+      });
+      console.log('Perplexity API call successful');
+    } catch (e) {
+      // Common causes: wrong model name or key/entitlements → surface a helpful message.
+      console.error('Perplexity API error:', e);
+      return res.status(502).json({
+        error: 'Perplexity API call failed',
+        detail: e?.message || String(e),
+      });
+    }
+
+    const ppxText = ppxCompletion?.choices?.[0]?.message?.content || '';
+    console.log('Perplexity response text length:', ppxText.length);
+    // If the API returns an HTML Cloudflare/401 page (common when key is wrong), detect & explain:
+    if (/<!doctype html>|<html/i.test(ppxText)) {
+      console.log('Perplexity returned HTML (likely auth issue)');
+      return res.status(502).json({
+        error: 'Perplexity API returned HTML (likely 401/authorization).',
+        detail:
+          'Double-check PPLX/PERPLEXITY API key and model name. If you are on a restricted tier, ensure your key is entitled for this model.',
+      });
+    }
+
+    const outreachStr = extractJSON(ppxText);
+    console.log('Extracted outreach JSON string:', !!outreachStr);
+    if (!outreachStr) {
+      console.log('Outreach text sample:', ppxText.substring(0, 500));
+      return res.status(500).json({ error: 'Could not parse outreach JSON from Perplexity.' });
+    }
+    const outreach = JSON.parse(outreachStr);
+    console.log('Outreach JSON parsed successfully');
+
+    // Final payload consumed by your UI
+    return res.json({
+      leadPersona: {
+        persona: research.persona,
+        companyData: research.companyResearch,
+        msdContext: research.msmContext,
+        aiFailuresThemes: research.aiFailuresThemes,
+      },
+      outreach,
+    });
+  } catch (err) {
+    console.error('Analyze error:', err);
+    console.error('Error stack:', err.stack);
+    return res.status(500).json({ error: 'An internal error occurred during analysis.' });
+  }
+});
+
+// ---------- pages
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/app', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ---------- start
 app.listen(PORT, () => {
-    console.log(`Atomicwork Outreach App running on port ${PORT}`);
-    console.log(`Access the app at: http://localhost:${PORT}`);
+  console.log(`AtomicBiddy running on port ${PORT}`);
+  console.log(`Open http://localhost:${PORT}`);
 });
