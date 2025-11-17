@@ -170,7 +170,7 @@ Rules:
     try {
       outreachResp = await anthropic.messages.create({
         model: outreachModel,
-        max_tokens: 1000,
+        max_tokens: 4000,
         temperature: 0.3,
         messages: [{ role: 'user', content: outreachBrief }],
       });
@@ -185,6 +185,7 @@ Rules:
 
     const outreachText = outreachResp.content?.[0]?.text || '';
     console.log('Outreach text length:', outreachText.length);
+    console.log('Outreach text preview:', outreachText.substring(0, 300));
 
     const outreachStr = extractJSON(outreachText);
     console.log('Extracted outreach JSON string:', !!outreachStr);
@@ -192,6 +193,7 @@ Rules:
       console.log('Outreach text sample:', outreachText.substring(0, 500));
       return res.status(500).json({ error: 'Could not parse outreach JSON from Anthropic.' });
     }
+    console.log('Parsed outreach JSON length:', outreachStr.length);
     const outreach = JSON.parse(outreachStr);
     console.log('Outreach JSON parsed successfully');
 
