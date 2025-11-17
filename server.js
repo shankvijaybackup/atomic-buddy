@@ -135,17 +135,18 @@ Return ONLY one well-formed JSON:
     const outreachModel = process.env.OPENAI_RESEARCH_MODEL || 'claude-3-7-sonnet-20250219';
     console.log('Using Anthropic model:', outreachModel);
 
-    const outreachBrief = `Create concise, professional outreach copy focused on learning & sharing (300-400 characters total per message).
+    const outreachBrief = `Create direct, business-focused outreach copy that addresses cost savings and TCO pain points (300-400 characters total per message).
 
 Context (JSON):
 ${JSON.stringify(research, null, 2)}
 
 Rules:
+- Focus on operational efficiency, cost reduction, and TCO challenges
+- Address specific pain points from the research (compliance, scalability, integration)
+- Be direct and professional, not flattering
+- Mention Atomicwork only when it directly solves identified problems
+- Reference AI failure themes to show understanding of risks
 - Keep each message between 300-400 characters total
-- Never sound salesy; be human, curious, credible
-- Mention Atomicwork only to establish credibility (agentic service management) and prior Freshworks experience if it helps
-- You may reference common AI project failure themes ONLY to empathize, not to pitch
-- Personalize to the lead persona and their company situation based on research
 - Return ONLY JSON in this exact schema:
 {
   "linkedin": { "subject": "string (50 chars max)", "message": "single string with \\n for new lines (300-400 chars total)" },
