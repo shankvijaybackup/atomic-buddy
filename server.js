@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ---------- clients
 // 1) Anthropic for research
 const anthropic = new Anthropic({
-  apiKey: process.env.OPENAI_API_KEY, // reusing the env var name
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 // 2) Perplexity via OpenAI-compatible interface
