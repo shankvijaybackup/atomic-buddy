@@ -95,11 +95,20 @@ Return ONLY one well-formed JSON:
 
     let researchResp;
     try {
-      researchResp = await perplexity.chat.completions.create({
+      // Add timeout to prevent hanging
+      const researchPromise = perplexity.chat.completions.create({
         model: researchModel,
         temperature: 0.2,
+        max_tokens: 2000, // Reduce tokens for faster response
         messages: [{ role: 'user', content: researchPrompt }],
       });
+      
+      researchResp = await Promise.race([
+        researchPromise,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Perplexity timeout after 25s')), 25000)
+        )
+      ]);
       console.log('Perplexity research response received');
     } catch (e) {
       console.error('Perplexity research API error:', e);
@@ -168,12 +177,20 @@ Rules:
 
     let outreachResp;
     try {
-      outreachResp = await anthropic.messages.create({
+      // Add timeout to prevent hanging
+      const outreachPromise = anthropic.messages.create({
         model: outreachModel,
-        max_tokens: 4000,
+        max_tokens: 2500, // Reduce for faster response
         temperature: 0.3,
         messages: [{ role: 'user', content: outreachBrief }],
       });
+      
+      outreachResp = await Promise.race([
+        outreachPromise,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Anthropic timeout after 25s')), 25000)
+        )
+      ]);
       console.log('Anthropic outreach response received');
     } catch (e) {
       console.error('Anthropic outreach API error:', e);
