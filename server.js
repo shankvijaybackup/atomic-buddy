@@ -127,7 +127,7 @@ Return ONLY one well-formed JSON:
     }
 
     console.log('Making Perplexity outreach call...');
-    const ppxModel = process.env.PERPLEXITY_MODEL || 'llama-3.1-sonar-large-128k-online';
+    const ppxModel = process.env.PERPLEXITY_MODEL || 'sonar-pro';
     console.log('Using Perplexity model:', ppxModel);
 
     const outreachBrief = `
