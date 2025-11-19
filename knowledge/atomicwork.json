@@ -1,0 +1,130 @@
+{
+  "docs": [
+    {
+      "id": "aw-exec-analogy-v1",
+      "title": "Autonomous Service Operations – Executive Narrative",
+      "tier": "Platform",
+      "audience": [
+        "Broad_Executive",
+        "CIO",
+        "CTO"
+      ],
+      "tags": [
+        "autonomy",
+        "platform_enabler",
+        "non_linear_scaling"
+      ],
+      "summary": "Atomicwork moves IT from ticket-driven support to autonomous service operations using AI, agentic automation, and deep context.",
+      "body": "Executive Summary: The Shift to Autonomous Service Operations\n\nAtomicwork shifts IT from a ticket-centric support model to autonomous service operations. Instead of measuring how fast humans clear queues, Atomicwork optimizes for service autonomy: deflecting L1 noise, automating L2 fulfillment, and accelerating L3 resolution using AI, Agentic Automation, and Deep Context (CMDL). IT moves from \"managing tickets\" to \"orchestrating outcomes.\"\n\nTier 1 – L1 Deflection via AI Search:\n- Legacy friction: Static self-service portals, stale KB articles, confusing taxonomies.\n- Atomicwork value: The Universal Agent acts as a cognitive interface (semantic search) over institutional knowledge (Confluence, Notion, SharePoint, Slack, etc.). It synthesizes answers instead of just linking to articles, driving \"Resolution at the Edge\" rather than click-throughs.\n- Enterprise impact: Handles ~80% of routine inquiries; frees highly skilled IT staff from acting as human search engines; significantly reduces Cost Per Ticket (CPT) and ticket volume.\n\nTier 2 – L2 Automation via IGA & Workflows:\n- Legacy friction: L2 is a bottleneck dominated by manual approvals and \"swivel-chair integration\" between ticketing tools and IdPs (Okta, Entra ID).\n- Atomicwork value: Agentic execution replaces routing: the system validates requests against policy, orchestrates approvals via Slack/Teams, and executes API calls to provision access or fulfill requests. Automation is governance-by-design, enforcing least privilege and consistent policies.\n- Enterprise impact: Eliminates the \"waiting tax\" on employees; new hires and access requests are fulfilled Just-In-Time (JIT); reduces security surface area and removes manual fulfillment errors.\n\nTier 3 – L3 Acceleration via MIM & Change Management:\n- Legacy friction: Major Incident Management and Change Management operate in an information vacuum. Engineers struggle to correlate alerts with recent changes using a stale CMDB.\n- Atomicwork value: CMDL provides a dynamic, real-time context layer that maps dependencies across services, infrastructure, and recent deployments. Enables proactive conflict detection: the system can flag when proposed changes may clash with active incidents or other scheduled changes.\n- Enterprise impact: Reduces MTTR and prevents change-induced incidents; improves SLA adherence and overall operational stability.\n\nStrategic Synthesis for C-Level:\n\"We are moving IT from a Support Function to a Platform Enabler. By deploying AI at L1, we protect human capital from noise. By deploying Agents at L2, we remove bureaucratic friction. And by deploying Context at L3, we ensure operational stability. The result is an IT organization that scales non-linearly—supporting more employees and more complex services without a proportional increase in headcount.\"",
+      "sourceType": "narrative",
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "isActive": true
+    },
+    {
+      "id": "aw-l1-deflection-core",
+      "title": "L1 Deflection via AI Search",
+      "tier": "L1",
+      "audience": [
+        "VP_IT_Ops",
+        "ServiceDeskManager",
+        "CIO"
+      ],
+      "tags": [
+        "ai_search",
+        "ticket_deflection",
+        "autonomy"
+      ],
+      "summary": "Universal Agent deflects up to 80% of L1 tickets by synthesizing answers from institutional knowledge.",
+      "body": "L1 Deflection via AI Search\n\nLegacy friction:\n- Static self-service portals return irrelevant, stale articles.\n- Employees abandon portals and immediately create tickets.\n- IT staff waste time acting as human search engines.\n\nAtomicwork value:\n- AI Search (Universal Agent) synthesizes answers from trusted internal knowledge.\n- Semantic interface indexing across Confluence, SharePoint, Notion, Slack.\n- Handles routine queries autonomously with real-time precision.\n\nStrategic outcomes:\n- Cuts TCO with up to 80% ticket deflection.\n- Stops forcing skilled IT staff to handle repetitive L1 queries.\n- Achieves resolution-at-the-edge without human intervention.",
+      "sourceType": "internal_doc",
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "isActive": true
+    },
+    {
+      "id": "aw-l2-automation-core",
+      "title": "L2 Automation via IGA & Workflows",
+      "tier": "L2",
+      "audience": [
+        "CISO",
+        "IT_Ops",
+        "HRIT"
+      ],
+      "tags": [
+        "iga",
+        "automation",
+        "jit",
+        "governance"
+      ],
+      "summary": "Agentic workflows validate policy, collect approvals, and execute tasks across Okta, Entra ID, and SaaS apps.",
+      "body": "L2 Automation via IGA & Workflows\n\nLegacy friction:\n- Humans act as 'middleware'—copying data between systems.\n- Manual approvals slow down fulfillment.\n- Access provisioning depends on tribal knowledge and manual checks.\n\nAtomicwork value:\n- Agentic workflows validate policy, collect approvals, and execute tasks.\n- Full automation across Okta, Entra ID, SaaS apps, HRIS.\n- Consistent governance and enforcement of least privilege.\n\nStrategic outcomes:\n- Eliminates L2 manual labor and swivel-chair operations.\n- Accelerates fulfillment from hours/days to seconds.\n- Reduces human error and security exposure.",
+      "sourceType": "internal_doc",
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "isActive": true
+    },
+    {
+      "id": "aw-l3-cmdl-core",
+      "title": "L3 Acceleration via CMDL & Change Management",
+      "tier": "L3",
+      "audience": [
+        "CTO",
+        "SRE_Manager",
+        "ChangeManager"
+      ],
+      "tags": [
+        "cmdl",
+        "context",
+        "mttr",
+        "change_management"
+      ],
+      "summary": "CMDL provides real-time context across services, infrastructure, and deployments to accelerate incident resolution and de-risk changes.",
+      "body": "L3 Acceleration via CMDL & Change Management\n\nLegacy friction:\n- Engineers waste hours correlating alerts with recent changes.\n- Stale CMDBs create blind spots during outages.\n- Incidents become 'war rooms' due to lack of shared context.\n\nAtomicwork value:\n- CMDL provides real-time context across services, infra, and deployments.\n- Proactive conflict detection flags risky changes before they cause outages.\n- Dynamic topology mapping accelerates root-cause analysis.\n\nStrategic outcomes:\n- Faster incident resolution (lower MTTR).\n- Prevents change-induced outages.\n- Improves SLA adherence and operational stability.",
+      "sourceType": "internal_doc",
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "isActive": true
+    },
+    {
+      "id": "aw-obj-handling-scaling",
+      "title": "Objection: Scaling IT Without Headcount",
+      "tier": "Platform",
+      "audience": [
+        "CIO",
+        "VP_IT_Ops",
+        "Broad_Executive"
+      ],
+      "tags": [
+        "objection",
+        "scaling",
+        "headcount",
+        "roi"
+      ],
+      "summary": "Atomicwork enables non-linear scaling by deflecting tickets and automating workflows, allowing IT to support more users without proportional headcount growth.",
+      "body": "Objection: \"We can't scale IT without adding more people.\"\n\nResponse:\nAtomicwork is designed specifically for non-linear scaling. By deflecting up to 80% of L1 tickets with AI Search and automating L2 fulfillment via agentic workflows, your existing team can handle significantly higher service volume. The platform shifts IT from queue management to outcome orchestration, so you support business growth without proportional increases in headcount. Customers report supporting 2–3× more employees with the same IT footprint after deploying Atomicwork's autonomy layers.",
+      "sourceType": "objection_handling",
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "isActive": true
+    },
+    {
+      "id": "74ca8e00-e5d2-4be5-ae42-30415daf70e4",
+      "title": "L1 L2",
+      "tier": "Platform",
+      "audience": [
+        "CIO",
+        "ServiceDeskManager",
+        "ChangeManager",
+        "VP_IT_Ops"
+      ],
+      "tags": [],
+      "summary": "",
+      "body": "L1 L2",
+      "sourceType": "narrative",
+      "createdAt": "2025-11-19T03:19:58.705Z",
+      "updatedAt": "2025-11-19T03:19:58.705Z",
+      "isActive": true
+    }
+  ]
+}

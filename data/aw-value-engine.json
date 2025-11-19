@@ -1,0 +1,109 @@
+{
+  "aw_value_engine": {
+    "tiers": {
+      "L1": {
+        "name": "L1 Deflection",
+        "legacy_friction": [
+          "Static self-service portals return irrelevant, stale articles.",
+          "Employees abandon portals and immediately create tickets.",
+          "IT staff waste time acting as human search engines."
+        ],
+        "atomicwork_solution": [
+          "AI Search (Universal Agent) synthesizes answers from trusted internal knowledge.",
+          "Semantic interface indexing across Confluence, SharePoint, Notion, Slack.",
+          "Handles routine queries autonomously with real-time precision."
+        ],
+        "strategic_outcomes": [
+          "Cuts TCO with up to 80% ticket deflection.",
+          "Stops forcing skilled IT staff to handle repetitive L1 queries.",
+          "Achieves resolution-at-the-edge without human intervention."
+        ],
+        "persona_hooks": {
+          "CIO": [
+            "Modernize IT without scaling headcount.",
+            "Move IT from tactical firefighting to strategic enablement."
+          ],
+          "VP_IT_Ops": [
+            "Eliminate noise so your teams focus on higher-value escalations.",
+            "Dramatically reduce queue volume and operational drag."
+          ],
+          "ServiceDeskManager": [
+            "Deflect repetitive requests and free L1 agents for complex issues.",
+            "Cut down ticket backlog and drive up CSAT."
+          ]
+        }
+      },
+      "L2": {
+        "name": "L2 Automation",
+        "legacy_friction": [
+          "Humans act as 'middleware'—copying data between systems.",
+          "Manual approvals slow down fulfillment.",
+          "Access provisioning depends on tribal knowledge and manual checks."
+        ],
+        "atomicwork_solution": [
+          "Agentic workflows validate policy, collect approvals, and execute tasks.",
+          "Full automation across Okta, Entra ID, SaaS apps, HRIS.",
+          "Consistent governance and enforcement of least privilege."
+        ],
+        "strategic_outcomes": [
+          "Eliminates L2 manual labor and swivel-chair operations.",
+          "Accelerates fulfillment from hours/days to seconds.",
+          "Reduces human error and security exposure."
+        ],
+        "persona_hooks": {
+          "CISO": [
+            "Reduce security surface area by enforcing JIT access.",
+            "Standardize access controls with zero manual exceptions."
+          ],
+          "IT_Ops": [
+            "Accelerate provisioning with zero over-reliance on humans.",
+            "Remove bottlenecks and eliminate approval gaps."
+          ],
+          "HRIT": [
+            "Instant onboarding of new hires.",
+            "Zero-day productivity for new employees."
+          ]
+        }
+      },
+      "L3": {
+        "name": "L3 Acceleration",
+        "legacy_friction": [
+          "Engineers waste hours correlating alerts with recent changes.",
+          "Stale CMDBs create blind spots during outages.",
+          "Incidents become 'war rooms' due to lack of shared context."
+        ],
+        "atomicwork_solution": [
+          "CMDL provides real-time context across services, infra, and deployments.",
+          "Proactive conflict detection flags risky changes before they cause outages.",
+          "Dynamic topology mapping accelerates root-cause analysis."
+        ],
+        "strategic_outcomes": [
+          "Faster incident resolution (lower MTTR).",
+          "Prevents change-induced outages.",
+          "Improves SLA adherence and operational stability."
+        ],
+        "persona_hooks": {
+          "CTO": [
+            "Ensure resilience and stability across rapidly evolving systems.",
+            "Support scale without increasing operational headcount."
+          ],
+          "SRE_Manager": [
+            "Shorten MTTR and prevent recurring incidents.",
+            "Replace CMDB guesswork with real-time dependency insights."
+          ],
+          "ChangeManager": [
+            "De-risk change windows with predictive conflict alerts.",
+            "Ensure seamless rollout of updates without operational surprises."
+          ]
+        }
+      }
+    },
+    "executive_synthesis": [
+      "Shift IT from a support function to a platform enabler.",
+      "Protect human capital by deflecting L1 noise with AI.",
+      "Remove bureaucratic friction at L2 with agentic automation.",
+      "Ensure operational stability at L3 through deep context (CMDL).",
+      "Enable IT to scale non-linearly with business growth."
+    ]
+  }
+}
