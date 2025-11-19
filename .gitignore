@@ -3,9 +3,17 @@
 
 # User-uploaded content
 /uploads
+/temp
+
+# Generated data files (vectors and knowledge)
+/data/*.json
 
 # Dependencies
 /node_modules
 
 # Environment variables
 .env
+
+# Test files
+testPdf.js
+atomicworkKnowledge.js
