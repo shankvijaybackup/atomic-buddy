@@ -39,9 +39,13 @@ const AtomicworkOutreachApp = () => {
             }
 
             setAnalysis(data);
+            // ✅ automatically jump to the Outreach Results tab
+            setActiveTab('results');
         } catch (err) {
             console.error('Analysis error:', err);
             setError(err.message || 'Failed to analyze profiles');
+            // Optional: keep user on setup tab when there is an error
+            setActiveTab('setup');
         } finally {
             setIsAnalyzing(false);
         }
