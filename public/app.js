@@ -36,10 +36,32 @@ const AtomicworkOutreachApp = () => {
                 }),
             });
 
-            const data = await response.json();
+            const contentType = response.headers.get('content-type') || '';
+            let data = null;
+
+            if (contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                if (!response.ok) {
+                    const snippet = text?.trim().slice(0, 180) || '';
+                    const suffix = snippet && text.length > 180 ? '…' : '';
+                    throw new Error(snippet ? `Analysis failed (HTTP ${response.status}): ${snippet}${suffix}` : `Analysis failed (HTTP ${response.status}).`);
+                }
+
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    throw new Error('Analysis service returned an unexpected response format.');
+                }
+            }
 
             if (!response.ok) {
-                throw new Error(data.error || 'Analysis failed');
+                throw new Error(data?.error || `Analysis failed (HTTP ${response.status}).`);
+            }
+
+            if (!data) {
+                throw new Error('Analysis service returned an empty response.');
             }
 
             setAnalysis(data);
