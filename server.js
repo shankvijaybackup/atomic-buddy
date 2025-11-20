@@ -90,6 +90,46 @@ const perplexity = new OpenAI({
   baseURL: 'https://api.perplexity.ai', // per official docs
 });
 
+const PERPLEXITY_TIMEOUT_MS = Number(process.env.PERPLEXITY_TIMEOUT_MS || 45000);
+const PERPLEXITY_MAX_RETRIES = Number(process.env.PERPLEXITY_MAX_RETRIES || 1);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callPerplexityWithRetry(requestOptions) {
+  let attempt = 0;
+  let lastError;
+  const maxAttempts = PERPLEXITY_MAX_RETRIES + 1; // initial attempt + retries
+
+  while (attempt < maxAttempts) {
+    try {
+      if (attempt > 0) {
+        const backoffMs = 500 * attempt;
+        console.log(`Retrying Perplexity call (attempt ${attempt + 1}/${maxAttempts}) after ${backoffMs}ms`);
+        await sleep(backoffMs);
+      }
+
+      const apiPromise = perplexity.chat.completions.create(requestOptions);
+      return await Promise.race([
+        apiPromise,
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Perplexity timeout after ${PERPLEXITY_TIMEOUT_MS}ms`)),
+            PERPLEXITY_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+    } catch (err) {
+      lastError = err;
+      console.error('Perplexity attempt failed:', err?.message || err);
+      attempt += 1;
+    }
+  }
+
+  throw lastError || new Error('Perplexity call failed after retries');
+}
+
 // ---------- helpers
 const extractJSON = (text) => {
   if (!text) return null;
@@ -426,6 +466,16 @@ Interpret these as:
   - If true and tonePreset is "friendly" or "curious", you may use at most ONE light emoji in a LinkedIn DM (never in subject lines).
 
 ---------------------------------
+SUBJECT LINE REQUIREMENTS (MUST FOLLOW)
+---------------------------------
+- Every subject line (email & LinkedIn) must contain a lightweight reference to Vijay's Freshworks credibility. Examples:
+  - "Freshworks founder insight on"
+  - "From Freshworks to Atomicwork"
+  - "Scaling support like we did at Freshworks"
+- Keep it human, concise, and never boastful—frame it as experience/lessons learned.
+- Do not repeat the exact same subject phrasing across tones; vary wording while keeping the Freshworks reference.
+
+---------------------------------
 HARD RULES – BAN AI-ISH WRITING AND EM DASHES
 ---------------------------------
 
@@ -450,6 +500,7 @@ ALWAYS:
 - Use specifics from the lead/company context (role, initiatives, sector).
 - Prefer "I" and "we" over "Atomicwork" if that fits the seller's voice.
 - Make the ask soft and optional, not pushy. E.g. "If you're exploring this, happy to share what we're seeing" is better than "Let's schedule a call this week."
+- Within the first 2-3 sentences, anchor Vijay's credibility (e.g., "Having scaled Freshworks..." or "We built Atomicwork after Freshworks...") in a humble, human tone.
 
 ------------------------------
 VOICE & TONE GUIDELINES
@@ -615,19 +666,12 @@ Generate outreach using the human-first guidelines above. You MUST include all t
 
     let apiResp;
     try {
-      const apiPromise = perplexity.chat.completions.create({
+      apiResp = await callPerplexityWithRetry({
         model,
         temperature: 0.3,
         max_tokens: 3000,
         messages: [{ role: 'user', content: combinedPrompt }],
       });
-      
-      apiResp = await Promise.race([
-        apiPromise,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Perplexity timeout after 28s')), 28000)
-        )
-      ]);
       console.log('Perplexity response received');
     } catch (e) {
       console.error('Perplexity API error:', e);
