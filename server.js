@@ -800,17 +800,12 @@ Return ONLY JSON:
     let apiResp;
     try {
       const model = process.env.PERPLEXITY_MODEL || 'sonar-pro';
-      const apiPromise = perplexity.chat.completions.create({
+      apiResp = await callPerplexityWithRetry({
         model,
         temperature: 0.3,
         max_tokens: 2500,
         messages: [{ role: 'user', content: prompt }],
       });
-
-      apiResp = await Promise.race([
-        apiPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Perplexity timeout after 28s')), 28000)),
-      ]);
     } catch (err) {
       console.error('Value driver Perplexity API error:', err);
       return res.status(502).json({

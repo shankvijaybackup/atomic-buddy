@@ -109,6 +109,30 @@
       "isActive": true
     },
     {
+      "id": "aw-enterprise-outreach-intro-v1",
+      "title": "Enterprise Outreach Intro Message",
+      "tier": "Platform",
+      "audience": [
+        "CIO",
+        "CTO",
+        "VP_IT_Ops",
+        "Broad_Executive"
+      ],
+      "tags": [
+        "enterprise_outreach",
+        "credibility",
+        "agentic_resolution",
+        "teams_slack",
+        "tco"
+      ],
+      "summary": "Brief outreach note positioning Atomicwork as a native AI ITSM platform with proven leadership and measurable tiered impact.",
+      "body": "Hi John — I’m Vijay Shankar, former Freshworks founder now building Atomicwork, the ITSM platform with AI at its core. We engineered a native engine that works inside Teams and Slack, so employees get help where they already collaborate. Customers are seeing faster L1 resolution, higher L2 accuracy, and accelerated L3 workflows while cutting legacy bloat and TCO. Would you be open to a quick chat later this week?",
+      "sourceType": "narrative",
+      "createdAt": "2025-11-21T08:39:00.000Z",
+      "updatedAt": "2025-11-21T08:39:00.000Z",
+      "isActive": true
+    },
+    {
       "id": "74ca8e00-e5d2-4be5-ae42-30415daf70e4",
       "title": "L1 L2",
       "tier": "Platform",
