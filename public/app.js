@@ -1,5 +1,9 @@
 const { useState, useEffect } = React;
 
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:4000'
+    : window.location.origin;
+
 const AtomicworkOutreachApp = () => {
     const [activeTab, setActiveTab] = useState('setup');
     const [userProfile, setUserProfile] = useState('');
@@ -20,7 +24,7 @@ const AtomicworkOutreachApp = () => {
         setError(null);
 
         try {
-            const response = await fetch('http://localhost:4000/api/analyze', {
+            const response = await fetch(`${API_BASE}/api/analyze`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -232,10 +236,6 @@ const AtomicworkOutreachApp = () => {
 
 // KnowledgeRagPanel component
 const KnowledgeRagPanel = () => {
-    // Dynamic API base URL - works in both development and production
-    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:4000'
-        : window.location.origin;
     const [docs, setDocs] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -303,7 +303,7 @@ const KnowledgeRagPanel = () => {
                 formData.append('file', file);
             });
 
-            const res = await fetch('http://localhost:4000/api/atomicwork/knowledge/ingest', {
+            const res = await fetch(`${API_BASE}/api/atomicwork/knowledge/ingest`, {
                 method: 'POST',
                 body: formData,
             });
@@ -847,4 +847,6 @@ const KnowledgeRagPanel = () => {
     );
 };
 
-ReactDOM.render(<AtomicworkOutreachApp />, document.getElementById('root'));
+const rootNode = document.getElementById('root');
+const root = ReactDOM.createRoot(rootNode);
+root.render(<AtomicworkOutreachApp />);
